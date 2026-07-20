@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="https://img.shields.io/badge/🎙️-Novel2Voice-v2.19.1-blue?style=for-the-badge&labelColor=0f1117&color=6c8cff" alt="Novel2Voice"/>
+<img src="assets/logo.png" width="200" alt="Novel2Voice Logo"/>
 
 # Novel2Voice
 
