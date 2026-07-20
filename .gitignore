@@ -1,0 +1,32 @@
+# Secrets
+.env
+*.env
+.env.*
+*.key
+*.pem
+*.token
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+*.egg-info/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Backups
+*_backup/
+*_backup_*/
+*.bak
+
+# Build
+dist/
+build/
+*.egg

@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Edge TTS 中文音色试听</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+  *{margin:0;padding:0;box-sizing:border-box}
+  :root{
+    --bg:#09090b;--surface:#18181b;--surface-hover:#27272a;
+    --border:#27272a;--border-hover:#3f3f46;
+    --text:#fafafa;--text-secondary:#a1a1aa;--text-muted:#71717a;
+    --accent:#a78bfa;--accent-dim:rgba(167,139,250,.12);
+    --green:#34d399;--green-dim:rgba(52,211,153,.12);
+    --pink:#f472b6;--pink-dim:rgba(244,114,182,.12);
+    --blue:#60a5fa;--blue-dim:rgba(96,165,250,.12);
+    --amber:#fbbf24;--amber-dim:rgba(251,191,36,.12);
+    --orange:#fb923c;--orange-dim:rgba(251,146,60,.12);
+    --violet:#c084fc;--violet-dim:rgba(192,132,252,.12);
+    --radius:12px;--radius-sm:8px;
+  }
+  body{background:var(--bg);color:var(--text);font-family:'Inter',-apple-system,BlinkMacSystemFont,system-ui,sans-serif;line-height:1.6;-webkit-font-smoothing:antialiased;min-height:100vh}
+
+  .header{text-align:center;padding:48px 24px 0;background:linear-gradient(180deg,rgba(167,139,250,.06) 0%,transparent 100%)}
+  .header h1{font-size:2rem;font-weight:700;letter-spacing:-.03em;background:linear-gradient(135deg,#fafafa 30%,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+  .header .sub{color:var(--text-muted);font-size:.875rem;margin-top:8px}
+  .header .sample{color:var(--text-muted);font-size:.8rem;margin-top:16px;font-style:italic;max-width:600px;margin-left:auto;margin-right:auto;padding:12px 20px;background:var(--surface);border-radius:var(--radius-sm);border:1px solid var(--border);display:inline-block}
+
+  .controls{display:flex;align-items:center;justify-content:center;gap:12px;padding:28px 24px;flex-wrap:wrap}
+  .search-box{position:relative;width:280px}
+  .search-box input{width:100%;padding:10px 14px 10px 38px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-size:.875rem;outline:none;transition:border-color .2s}
+  .search-box input:focus{border-color:var(--accent)}
+  .search-box input::placeholder{color:var(--text-muted)}
+  .search-box svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text-muted);pointer-events:none}
+
+  .tabs{display:flex;gap:4px;background:var(--surface);padding:4px;border-radius:var(--radius);border:1px solid var(--border)}
+  .tab{padding:7px 16px;border-radius:var(--radius-sm);font-size:.8rem;font-weight:500;color:var(--text-muted);cursor:pointer;transition:all .2s;border:none;background:transparent;white-space:nowrap}
+  .tab:hover{color:var(--text-secondary)}
+  .tab.active{background:var(--accent-dim);color:var(--accent)}
+
+  .container{max-width:1200px;margin:0 auto;padding:0 24px 64px}
+  .section{margin-bottom:40px}
+  .section-head{display:flex;align-items:center;gap:10px;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--border)}
+  .section-head h2{font-size:1rem;font-weight:600;letter-spacing:-.01em}
+  .badge{font-size:.7rem;padding:3px 10px;border-radius:999px;font-weight:600;letter-spacing:.02em}
+  .badge-pink{background:var(--pink-dim);color:var(--pink)}
+  .badge-blue{background:var(--blue-dim);color:var(--blue)}
+  .badge-amber{background:var(--amber-dim);color:var(--amber)}
+  .badge-orange{background:var(--orange-dim);color:var(--orange)}
+  .badge-violet{background:var(--violet-dim);color:var(--violet)}
+
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:12px}
+
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;transition:all .25s ease;position:relative;overflow:hidden}
+  .card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(167,139,250,.3),transparent);opacity:0;transition:opacity .3s}
+  .card:hover{border-color:var(--border-hover);transform:translateY(-2px)}
+  .card:hover::before{opacity:1}
+
+  .card-top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:8px}
+  .card-info{flex:1;min-width:0}
+  .voice-name{font-weight:600;font-size:.95rem}
+  .voice-id{color:var(--text-muted);font-size:.72rem;font-family:'SF Mono',SFMono-Regular,Consolas,monospace;margin-top:2px}
+  .voice-desc{color:var(--text-secondary);font-size:.8rem;margin-top:6px;line-height:1.5}
+  .voice-tags{display:flex;gap:5px;flex-wrap:wrap;margin-top:8px}
+  .vtag{font-size:.68rem;padding:2px 8px;border-radius:6px;background:rgba(255,255,255,.05);color:var(--text-muted);border:1px solid rgba(255,255,255,.06)}
+
+  .copy-btn{display:flex;align-items:center;gap:5px;padding:6px 12px;border-radius:var(--radius-sm);background:var(--accent-dim);border:1px solid rgba(167,139,250,.2);color:var(--accent);font-size:.75rem;font-weight:500;cursor:pointer;transition:all .2s;white-space:nowrap;flex-shrink:0}
+  .copy-btn:hover{background:rgba(167,139,250,.2);border-color:rgba(167,139,250,.4)}
+  .copy-btn.copied{background:var(--green-dim);border-color:rgba(52,211,153,.3);color:var(--green)}
+  .copy-btn svg{width:14px;height:14px}
+
+  .audio-wrap{margin-top:12px}
+  audio{width:100%;height:40px;border-radius:8px}
+
+  .toast{position:fixed;bottom:32px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--surface);border:1px solid var(--border);padding:10px 20px;border-radius:var(--radius);font-size:.82rem;color:var(--green);opacity:0;transition:all .3s ease;pointer-events:none;z-index:999;box-shadow:0 8px 32px rgba(0,0,0,.4)}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+  @media(max-width:768px){
+    .header h1{font-size:1.5rem}
+    .grid{grid-template-columns:1fr}
+    .controls{flex-direction:column}
+    .search-box{width:100%;max-width:320px}
+    .tabs{flex-wrap:wrap;justify-content:center}
+  }
+  ::-webkit-scrollbar{width:6px}
+  ::-webkit-scrollbar-track{background:transparent}
+  ::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>🎙️ Edge TTS 中文音色试听</h1>
+  <p class="sub">novel2voice skill · 28 个中文音色 · 点击复制音色名称</p>
+  <p class="sample">「你好，我是这个故事里的角色。今天的天气真不错，我们一起出去走走吧！」</p>
+</div>
+
+<div class="controls">
+  <div class="search-box">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+    <input type="text" id="search" placeholder="搜索音色名称 / 描述 / 标签…" oninput="doFilter()">
+  </div>
+  <div class="tabs" id="tabs">
+    <button class="tab active" data-cat="all" onclick="switchTab(this)">全部</button>
+    <button class="tab" data-cat="female" onclick="switchTab(this)">女声</button>
+    <button class="tab" data-cat="male" onclick="switchTab(this)">男声</button>
+    <button class="tab" data-cat="dialect" onclick="switchTab(this)">方言</button>
+    <button class="tab" data-cat="hk" onclick="switchTab(this)">粤语</button>
+    <button class="tab" data-cat="tw" onclick="switchTab(this)">台湾腔</button>
+  </div>
+</div>
+
+<div class="container" id="voice-list"></div>
+<div class="toast" id="toast">✓ 已复制</div>
+
+<script>
+// voice id → mp3 filename (actual files on disk)
+const FILE_MAP = {
+  "zh-CN-XiaoxiaoNeural":"XiaoxiaoNeural",
+  "zh-CN-XiaoyiNeural":"XiaoyiNeural",
+  "zh-CN-XiaohanNeural":"XiaohanNeural",
+  "zh-CN-XiaomoNeural":"XiaomoNeural",
+  "zh-CN-XiaoruiNeural":"XiaoruiNeural",
+  "zh-CN-XiaoshuangNeural":"XiaoshuangNeural",
+  "zh-CN-XiaomengNeural":"XiaomengNeural",
+  "zh-CN-YunxiNeural":"YunxiNeural",
+  "zh-CN-YunyangNeural":"YunyangNeural",
+  "zh-CN-YunjianNeural":"YunjianNeural",
+  "zh-CN-YunxiaNeural":"YunxiaNeural",
+  "zh-CN-YunzeNeural":"YunzeNeural",
+  "zh-CN-YunfengNeural":"YunfengNeural",
+  "zh-CN-liaoning-YunbiaoNeural":"liaoning-Yunbiao",
+  "zh-CN-liaoning-XiaobeiNeural":"liaoning-Xiaobei",
+  "zh-CN-henan-YundengNeural":"henan-Yundeng",
+  "zh-CN-shandong-YunxiangNeural":"shandong-Yunxiang",
+  "zh-CN-sichuan-YunxiNeural":"sichuan-Yunxi",
+  "zh-CN-guangxi-YunqiNeural":"guangxi-Yunqi",
+  "zh-CN-shaanxi-XiaoniNeural":"shaanxi-Xiaoni",
+  "wuu-CN-YunzheNeural":"wuu-Yunzhe",
+  "wuu-CN-XiaotongNeural":"wuu-Xiaotong",
+  "zh-HK-HiuGaaiNeural":"HK-HiuGaai",
+  "zh-HK-HiuMaanNeural":"HK-HiuMaan",
+  "zh-HK-WanLungNeural":"HK-WanLung",
+  "zh-TW-HsiaoChenNeural":"TW-HsiaoChen",
+  "zh-TW-HsiaoYuNeural":"TW-HsiaoYu",
+  "zh-TW-YunJheNeural":"TW-YunJhe",
+};
+
+const VOICES = [
+  {cat:"female",name:"晓晓",id:"zh-CN-XiaoxiaoNeural",desc:"清亮标准播音青年音，干练均衡，可塑性强",age:"20~28岁",use:"旁白 / 女主 / 解说"},
+  {cat:"female",name:"晓依",id:"zh-CN-XiaoyiNeural",desc:"低沉温柔、舒缓温婉、柔和治愈",age:"25~35岁",use:"温柔人妻 / 治愈系"},
+  {cat:"female",name:"晓涵",id:"zh-CN-XiaohanNeural",desc:"文艺抒情、柔和偏清冷文艺感",age:"22~30岁",use:"文艺女主 / 大家闺秀"},
+  {cat:"female",name:"晓墨",id:"zh-CN-XiaomoNeural",desc:"情绪丰富，可冷可柔，层次感强",age:"24~35岁",use:"虐文女主 / 江湖侠女"},
+  {cat:"female",name:"晓睿",id:"zh-CN-XiaoruiNeural",desc:"稳重厚实中年女声，气场平和庄重",age:"45~60岁",use:"主母 / 长辈"},
+  {cat:"female",name:"晓双",id:"zh-CN-XiaoshuangNeural",desc:"清脆孩童少女音，稚嫩",age:"8~14岁",use:"小丫鬟 / 幼年女主"},
+  {cat:"female",name:"晓梦",id:"zh-CN-XiaomengNeural",desc:"软萌日常聊天感甜妹音",age:"16~22岁",use:"甜宠文女配 / 校园学妹"},
+
+  {cat:"male",name:"云希",id:"zh-CN-YunxiNeural",desc:"清爽阳光青年男声，现代少年感",age:"18~27岁",use:"少年男主 / 校园"},
+  {cat:"male",name:"云扬",id:"zh-CN-YunyangNeural",desc:"央视浑厚播音腔，庄重正式权威",age:"35~55岁",use:"帝王 / 官员 / 旁白"},
+  {cat:"male",name:"云健",id:"zh-CN-YunjianNeural",desc:"低沉浑厚中年大叔音，力量感强",age:"38~55岁",use:"硬汉 / 武将 / 中年男主"},
+  {cat:"male",name:"云夏",id:"zh-CN-YunxiaNeural",desc:"正太少年清脆童声",age:"7~15岁",use:"幼年男主 / 小师弟"},
+  {cat:"male",name:"云泽",id:"zh-CN-YunzeNeural",desc:"偏苍老沉稳老年男声",age:"60岁+",use:"隐世高人 / 长老 / 道长"},
+  {cat:"male",name:"云枫",id:"zh-CN-YunfengNeural",desc:"平淡务实中青年男声",age:"28~38岁",use:"温润男配 / 务实配角"},
+
+  {cat:"dialect",name:"云彪（东北）",id:"zh-CN-liaoning-YunbiaoNeural",desc:"豪爽粗犷、仗义东北大叔",age:"40~60岁",use:"东北林场汉子 / 村口大叔"},
+  {cat:"dialect",name:"晓北（东北）",id:"zh-CN-liaoning-XiaobeiNeural",desc:"豪爽直白、热心东北阿姨",age:"40~60岁",use:"东北乡下大婶 / 泼辣阿姨"},
+  {cat:"dialect",name:"云登（河南）",id:"zh-CN-henan-YundengNeural",desc:"淳朴实在中原老农",age:"45~60岁",use:"中原乡村老汉 / 务工大叔"},
+  {cat:"dialect",name:"云翔（山东）",id:"zh-CN-shandong-YunxiangNeural",desc:"耿直厚道、大块朴实汉子",age:"42~60岁",use:"齐鲁乡村汉子 / 码头工人"},
+  {cat:"dialect",name:"云熙（四川）",id:"zh-CN-sichuan-YunxiNeural",desc:"随性活络、市井圆滑川渝男人",age:"35~55岁",use:"山城个体户 / 小镇生意人"},
+  {cat:"dialect",name:"云奇（广西）",id:"zh-CN-guangxi-YunqiNeural",desc:"质朴内敛岭南乡村汉子",age:"40~58岁",use:"桂地山村农户 / 边境小镇"},
+  {cat:"dialect",name:"晓妮（陕西）",id:"zh-CN-shaanxi-XiaoniNeural",desc:"淳朴、坚韧西北妇人",age:"40~55岁",use:"黄土高原农妇 / 客栈老板娘"},
+  {cat:"dialect",name:"云哲（吴语）",id:"wuu-CN-YunzheNeural",desc:"精明斯文江南生意人",age:"40~55岁",use:"江浙商人 / 绸缎庄掌柜"},
+  {cat:"dialect",name:"晓彤（吴语）",id:"wuu-CN-XiaotongNeural",desc:"精明细腻江南市井阿姨",age:"35~55岁",use:"水乡街坊阿姨 / 茶馆老板娘"},
+
+  {cat:"hk",name:"晓佳",id:"zh-HK-HiuGaaiNeural",desc:"干练港风都市女性",age:"20~30岁",use:"港圈职场女性 / 粤地女主"},
+  {cat:"hk",name:"晓蔓",id:"zh-HK-HiuMaanNeural",desc:"温柔成熟港式妇人",age:"30~45岁",use:"香港中产太太 / 大家族主母"},
+  {cat:"hk",name:"云龙",id:"zh-HK-WanLungNeural",desc:"粤语男性角色",age:"—",use:"粤语男性角色"},
+
+  {cat:"tw",name:"晓晨",id:"zh-TW-HsiaoChenNeural",desc:"清甜软台妹感",age:"19~27岁",use:"台偶女主 / 宝岛小镇少女"},
+  {cat:"tw",name:"晓雨",id:"zh-TW-HsiaoYuNeural",desc:"温柔成熟台系女性",age:"25~35岁",use:"台湾温婉人妻 / 文艺台籍女配"},
+  {cat:"tw",name:"云哲",id:"zh-TW-YunJheNeural",desc:"台湾男性角色",age:"—",use:"台湾男性角色"},
+];
+
+const CAT_META = {
+  female:{label:"女声",cls:"badge-pink"},
+  male:{label:"男声",cls:"badge-blue"},
+  dialect:{label:"方言",cls:"badge-amber"},
+  hk:{label:"粤语",cls:"badge-orange"},
+  tw:{label:"台湾腔",cls:"badge-violet"},
+};
+
+const COPY_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
+const CHECK_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+
+let activeCat = "all";
+
+function getAudioFile(id) { return (FILE_MAP[id] || id) + '.mp3'; }
+
+function render(voices) {
+  const list = document.getElementById('voice-list');
+  if (!voices.length) {
+    list.innerHTML = '<p style="text-align:center;color:var(--text-muted);padding:48px 0">没有匹配的音色</p>';
+    return;
+  }
+  const groups = {};
+  voices.forEach(v => { (groups[v.cat] = groups[v.cat] || []).push(v); });
+  const order = ['female','male','dialect','hk','tw'];
+  let html = '';
+  order.forEach(cat => {
+    if (!groups[cat]) return;
+    const m = CAT_META[cat];
+    html += '<div class="section" data-cat="'+cat+'"><div class="section-head"><h2>'+m.label+'</h2><span class="badge '+m.cls+'">'+groups[cat].length+' 个</span></div><div class="grid">';
+    groups[cat].forEach(v => {
+      const tags = [v.age, ...v.use.split(' / ')].map(t=>'<span class="vtag">'+t+'</span>').join('');
+      html += '<div class="card" data-cat="'+v.cat+'"><div class="card-top"><div class="card-info">'
+        +'<div class="voice-name">'+v.name+'</div>'
+        +'<div class="voice-id">'+v.id+'</div>'
+        +'<div class="voice-desc">'+v.desc+'</div>'
+        +'<div class="voice-tags">'+tags+'</div>'
+        +'</div><button class="copy-btn" onclick="copyVoice(this,\''+v.id+'\')">'+COPY_SVG+' 复制</button></div>'
+        +'<div class="audio-wrap"><audio controls preload="none" src="'+getAudioFile(v.id)+'"></audio></div></div>';
+    });
+    html += '</div></div>';
+  });
+  list.innerHTML = html;
+}
+
+function switchTab(el) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  activeCat = el.dataset.cat;
+  doFilter();
+}
+
+function doFilter() {
+  const q = document.getElementById('search').value.toLowerCase().trim();
+  let filtered = VOICES;
+  if (activeCat !== 'all') filtered = filtered.filter(v => v.cat === activeCat);
+  if (q) filtered = filtered.filter(v =>
+    v.name.toLowerCase().includes(q) || v.id.toLowerCase().includes(q) ||
+    v.desc.toLowerCase().includes(q) || v.use.toLowerCase().includes(q) || v.age.includes(q)
+  );
+  document.querySelectorAll('audio').forEach(a => { a.pause(); a.currentTime = 0; });
+  render(filtered);
+}
+
+function copyVoice(btn, id) {
+  navigator.clipboard.writeText(id).then(() => {
+    btn.classList.add('copied');
+    btn.innerHTML = CHECK_SVG+' 已复制';
+    const toast = document.getElementById('toast');
+    toast.textContent = '✓ 已复制 '+id;
+    toast.classList.add('show');
+    setTimeout(() => {
+      btn.classList.remove('copied');
+      btn.innerHTML = COPY_SVG+' 复制';
+      toast.classList.remove('show');
+    }, 2000);
+  });
+}
+
+render(VOICES);
+</script>
+</body>
+</html>
