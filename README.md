@@ -298,22 +298,22 @@ openclaw skills install @jangviktor-web/novel2voice
 ### 方式二：直接克隆
 
 ```bash
-git clone https://github.com/jangviktor-web/novel2voice-clawskill.git
-cd novel2voice-clawskill
+git clone https://github.com/jangviktor-web/novel2voice.git
+cd novel2voice
 pip install requests charset_normalizer
 ```
 
 ### 方式三：一键安装脚本
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/jangviktor-web/novel2voice-clawskill/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/jangviktor-web/novel2voice/main/install.sh | bash
 ```
 
 ### 方式四：手动放入 Skills 目录
 
 ```bash
 # QoderWork / OpenClaw / Claude Code 等 skills-compatible runtime
-cp -r novel2voice-clawskill ~/.qoderworkcn/skills/novel2voice
+cp -r novel2voice ~/.qoderworkcn/skills/novel2voice
 ```
 
 ### 环境要求

@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Novel2Voice — 小说/字幕转多角色语音</title>
+<meta name="description" content="将小说文本或视频字幕自动转化为多角色有声书。500+ 音色，自动角色识别，情感标注，异步并发生成。">
+<link rel="icon" type="image/png" href="assets/logo.png">
+<style>
+:root {
+  --bg: #0a1628;
+  --bg-deep: #060f1d;
+  --surface: #111f36;
+  --surface-hover: #162844;
+  --border: rgba(255,255,255,0.08);
+  --accent: #2dd4a8;
+  --accent-dim: #1a9e7a;
+  --accent-glow: rgba(45,212,168,0.15);
+  --navy: #0a3d62;
+  --text: #e8edf5;
+  --text-muted: #8899b0;
+  --text-dim: #5a6f8a;
+  --radius: 14px;
+  --radius-sm: 8px;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans SC', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.7;
+  -webkit-font-smoothing: antialiased;
+}
+.container { max-width: 1140px; margin: 0 auto; padding: 0 24px; }
+
+/* ── Nav ── */
+nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  background: rgba(10,22,40,0.85);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+}
+nav .container {
+  display: flex; align-items: center; justify-content: space-between;
+  height: 64px;
+}
+.nav-brand { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+.nav-brand img { width: 32px; height: 32px; border-radius: 6px; }
+.nav-brand span { font-weight: 700; font-size: 1.1rem; color: var(--text); }
+.nav-links { display: flex; gap: 28px; align-items: center; }
+.nav-links a { color: var(--text-muted); text-decoration: none; font-size: 0.9rem; transition: color 0.2s; }
+.nav-links a:hover { color: var(--accent); }
+.nav-cta {
+  background: var(--accent); color: var(--bg-deep); padding: 8px 18px;
+  border-radius: var(--radius-sm); font-weight: 600; font-size: 0.85rem;
+  text-decoration: none; transition: all 0.2s;
+}
+.nav-cta:hover { background: #3eeabc; transform: translateY(-1px); }
+
+/* ── Hero ── */
+.hero {
+  padding: 160px 0 100px;
+  text-align: center;
+  background: radial-gradient(ellipse 80% 60% at 50% 20%, rgba(45,212,168,0.06) 0%, transparent 70%),
+              radial-gradient(ellipse 60% 50% at 80% 80%, rgba(10,61,98,0.2) 0%, transparent 60%);
+}
+.hero-logo { width: 120px; height: 120px; margin: 0 auto 32px; border-radius: 24px; }
+.hero h1 { font-size: 3.2rem; font-weight: 800; letter-spacing: -0.03em; margin-bottom: 16px; }
+.hero h1 .accent { color: var(--accent); }
+.hero .tagline { font-size: 1.25rem; color: var(--text-muted); max-width: 600px; margin: 0 auto 40px; }
+.hero-badges { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-bottom: 40px; }
+.badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 14px; border-radius: 20px; font-size: 0.8rem;
+  background: var(--surface); border: 1px solid var(--border); color: var(--text-muted);
+}
+.badge .dot { width: 7px; height: 7px; border-radius: 50%; }
+.hero-actions { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; }
+.btn-primary {
+  background: var(--accent); color: var(--bg-deep); padding: 14px 32px;
+  border-radius: var(--radius-sm); font-weight: 700; font-size: 1rem;
+  text-decoration: none; transition: all 0.2s; display: inline-flex; align-items: center; gap: 8px;
+}
+.btn-primary:hover { background: #3eeabc; transform: translateY(-2px); box-shadow: 0 8px 30px var(--accent-glow); }
+.btn-secondary {
+  background: var(--surface); color: var(--text); padding: 14px 32px;
+  border-radius: var(--radius-sm); font-weight: 600; font-size: 1rem;
+  text-decoration: none; border: 1px solid var(--border); transition: all 0.2s;
+}
+.btn-secondary:hover { border-color: var(--accent-dim); background: var(--surface-hover); }
+
+/* ── Sections ── */
+section { padding: 80px 0; }
+.section-title { font-size: 2rem; font-weight: 700; text-align: center; margin-bottom: 12px; }
+.section-sub { text-align: center; color: var(--text-muted); margin-bottom: 48px; font-size: 1.05rem; }
+
+/* ── Features ── */
+.features-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 20px;
+}
+.feature-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 28px;
+  transition: all 0.25s;
+}
+.feature-card:hover { border-color: var(--accent-dim); transform: translateY(-3px); background: var(--surface-hover); }
+.feature-icon { font-size: 1.8rem; margin-bottom: 14px; }
+.feature-card h3 { font-size: 1.1rem; font-weight: 600; margin-bottom: 8px; }
+.feature-card p { color: var(--text-muted); font-size: 0.92rem; line-height: 1.6; }
+
+/* ── Quick Start ── */
+.quickstart { background: var(--bg-deep); }
+.code-block {
+  background: #0d1a2d; border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 24px 28px;
+  font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+  font-size: 0.9rem; line-height: 1.8; overflow-x: auto;
+  position: relative; max-width: 720px; margin: 0 auto;
+}
+.code-block .comment { color: var(--text-dim); }
+.code-block .cmd { color: var(--accent); }
+.code-block .flag { color: #7cb3ff; }
+.copy-btn {
+  position: absolute; top: 12px; right: 12px;
+  background: var(--surface); border: 1px solid var(--border);
+  color: var(--text-muted); padding: 6px 12px; border-radius: 6px;
+  cursor: pointer; font-size: 0.75rem; transition: all 0.2s;
+}
+.copy-btn:hover { color: var(--accent); border-color: var(--accent-dim); }
+
+/* ── Voices ── */
+.voice-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 12px;
+}
+.voice-chip {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); padding: 14px 16px;
+  text-align: center; transition: all 0.2s; cursor: default;
+}
+.voice-chip:hover { border-color: var(--accent-dim); background: var(--surface-hover); }
+.voice-chip .name { font-weight: 600; font-size: 1rem; margin-bottom: 4px; }
+.voice-chip .desc { font-size: 0.75rem; color: var(--text-muted); }
+.voice-chip.female { border-left: 3px solid #d4789c; }
+.voice-chip.male { border-left: 3px solid #6aabdb; }
+.voice-chip.dialect { border-left: 3px solid #7cc98a; }
+
+/* ── Workflow ── */
+.workflow-steps {
+  display: flex; gap: 0; align-items: center; justify-content: center;
+  flex-wrap: wrap; margin-top: 40px;
+}
+.wf-step {
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  padding: 20px 16px; min-width: 120px;
+}
+.wf-step .icon { font-size: 2rem; }
+.wf-step .label { font-size: 0.85rem; color: var(--text-muted); text-align: center; }
+.wf-arrow { color: var(--text-dim); font-size: 1.4rem; padding: 0 4px; }
+
+/* ── Comparison ── */
+.compare-table {
+  width: 100%; border-collapse: collapse; font-size: 0.9rem;
+  background: var(--surface); border-radius: var(--radius); overflow: hidden;
+}
+.compare-table th, .compare-table td { padding: 14px 18px; text-align: center; border-bottom: 1px solid var(--border); }
+.compare-table th { background: var(--navy); color: var(--text); font-weight: 600; }
+.compare-table td:first-child { text-align: left; font-weight: 500; }
+.compare-table tr:last-child td { border-bottom: none; }
+.compare-table .yes { color: var(--accent); }
+.compare-table .no { color: #e05555; }
+.compare-table .partial { color: #e0a030; }
+
+/* ── FAQ ── */
+.faq-list { max-width: 720px; margin: 0 auto; }
+.faq-item { border-bottom: 1px solid var(--border); }
+.faq-item summary {
+  padding: 20px 0; cursor: pointer; font-weight: 600; font-size: 1rem;
+  list-style: none; display: flex; justify-content: space-between; align-items: center;
+}
+.faq-item summary::after { content: '+'; font-size: 1.4rem; color: var(--text-dim); transition: transform 0.2s; }
+.faq-item[open] summary::after { transform: rotate(45deg); }
+.faq-item .answer { padding: 0 0 20px; color: var(--text-muted); font-size: 0.92rem; line-height: 1.7; }
+
+/* ── Footer ── */
+footer {
+  border-top: 1px solid var(--border); padding: 48px 0;
+  text-align: center; color: var(--text-dim); font-size: 0.85rem;
+}
+footer a { color: var(--accent); text-decoration: none; }
+footer .footer-links { display: flex; gap: 24px; justify-content: center; margin-bottom: 16px; }
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  .hero h1 { font-size: 2.2rem; }
+  .hero .tagline { font-size: 1.05rem; }
+  .nav-links { display: none; }
+  .features-grid { grid-template-columns: 1fr; }
+  .workflow-steps { flex-direction: column; }
+  .wf-arrow { transform: rotate(90deg); }
+  .compare-table { font-size: 0.8rem; }
+  .compare-table th, .compare-table td { padding: 10px 8px; }
+}
+</style>
+</head>
+<body>
+
+<!-- Nav -->
+<nav>
+  <div class="container">
+    <a class="nav-brand" href="#">
+      <img src="assets/logo.png" alt="Novel2Voice">
+      <span>Novel2Voice</span>
+    </a>
+    <div class="nav-links">
+      <a href="#features">Features</a>
+      <a href="#quickstart">Quick Start</a>
+      <a href="#voices">Voices</a>
+      <a href="#faq">FAQ</a>
+      <a class="nav-cta" href="https://github.com/jangviktor-web/novel2voice" target="_blank">GitHub</a>
+    </div>
+  </div>
+</nav>
+
+<!-- Hero -->
+<section class="hero">
+  <div class="container">
+    <img class="hero-logo" src="assets/logo.png" alt="Novel2Voice Logo">
+    <h1>Novel<span class="accent">2</span>Voice</h1>
+    <p class="tagline">将小说文本或视频字幕，自动转化为多角色有声书。<br>500+ 音色 · 自动角色识别 · 情感标注 · 异步并发生成</p>
+    <div class="hero-badges">
+      <span class="badge"><span class="dot" style="background:var(--accent)"></span>Edge TTS 500+ 音色</span>
+      <span class="badge"><span class="dot" style="background:#7cb3ff"></span>MiMo TTS 9 音色</span>
+      <span class="badge"><span class="dot" style="background:#e0a030"></span>Python 3.8+</span>
+      <span class="badge"><span class="dot" style="background:#7cc98a"></span>MIT License</span>
+    </div>
+    <div class="hero-actions">
+      <a class="btn-primary" href="#quickstart">开始使用</a>
+      <a class="btn-secondary" href="https://github.com/jangviktor-web/novel2voice" target="_blank">View on GitHub</a>
+    </div>
+  </div>
+</section>
+
+<!-- Features -->
+<section id="features">
+  <div class="container">
+    <h2 class="section-title">核心能力</h2>
+    <p class="section-sub">从文本到有声书，全流程自动化</p>
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feature-icon">🎭</div>
+        <h3>多角色自动分配</h3>
+        <p>LLM 分析角色性别、年龄、性格特征，自动匹配最佳音色，无需手动配置。</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🎨</div>
+        <h3>情感风格控制</h3>
+        <p>50+ 情感标签：温柔、愤怒、悲伤、撒娇、东北话、唱歌模式……一行标签即可控制语气。</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">📝</div>
+        <h3>字幕转语音</h3>
+        <p>支持 SRT/ASS 字幕文件，多编码自动检测，按时间轴对齐生成，视频配音一步到位。</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">⚡</div>
+        <h3>异步并发生成</h3>
+        <p>多线程 TTS 并发请求，速度提升 3-5 倍。支持断点续传，中断后自动继续。</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🔊</div>
+        <h3>500+ 音色库</h3>
+        <p>Edge TTS 覆盖 100+ 语言/地区。中文 28 个精品音色，含 9 种方言、粤语、台湾腔。</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🎚️</div>
+        <h3>专业后处理</h3>
+        <p>EBU R128 响度标准化、按章合并、ID3 标签写入，输出即可发布的 MP3 有声书。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Quick Start -->
+<section id="quickstart" class="quickstart">
+  <div class="container">
+    <h2 class="section-title">Quick Start</h2>
+    <p class="section-sub">三步开始，无需 API Key</p>
+    <div class="code-block">
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+      <span class="comment"># 1. 安装</span><br>
+      <span class="cmd">openclaw skills install</span> <span class="flag">@jangviktor-web/novel2voice</span><br><br>
+      <span class="comment"># 2. 生成有声书（自动识别角色）</span><br>
+      <span class="cmd">python3</span> scripts/generate_audiobook.py <span class="flag">--auto</span> novel.txt ./output<br><br>
+      <span class="comment"># 3. 异步并发（推荐，3-5x 加速）</span><br>
+      <span class="cmd">python3</span> scripts/generate_audiobook.py <span class="flag">--auto</span> novel.txt ./output <span class="flag">--async --concurrent</span> 5
+    </div>
+  </div>
+</section>
+
+<!-- Voices -->
+<section id="voices">
+  <div class="container">
+    <h2 class="section-title">音色库</h2>
+    <p class="section-sub">28 个中文精品音色 + 9 个 MiMo 音色，覆盖所有角色类型</p>
+    <div class="voice-grid">
+      <div class="voice-chip female"><div class="name">晓晓</div><div class="desc">清亮播音 · 旁白/女主</div></div>
+      <div class="voice-chip female"><div class="name">晓依</div><div class="desc">温柔治愈 · 人妻</div></div>
+      <div class="voice-chip female"><div class="name">晓涵</div><div class="desc">文艺清冷 · 闺秀</div></div>
+      <div class="voice-chip female"><div class="name">晓墨</div><div class="desc">情绪丰富 · 侠女</div></div>
+      <div class="voice-chip female"><div class="name">晓睿</div><div class="desc">稳重中年 · 长辈</div></div>
+      <div class="voice-chip female"><div class="name">晓双</div><div class="desc">清脆孩童 · 丫鬟</div></div>
+      <div class="voice-chip female"><div class="name">晓梦</div><div class="desc">软萌甜妹 · 学妹</div></div>
+      <div class="voice-chip male"><div class="name">云希</div><div class="desc">阳光少年 · 男主</div></div>
+      <div class="voice-chip male"><div class="name">云扬</div><div class="desc">浑厚播音 · 帝王</div></div>
+      <div class="voice-chip male"><div class="name">云健</div><div class="desc">低沉大叔 · 武将</div></div>
+      <div class="voice-chip male"><div class="name">云夏</div><div class="desc">正太童声 · 师弟</div></div>
+      <div class="voice-chip male"><div class="name">云泽</div><div class="desc">苍老沉稳 · 高人</div></div>
+      <div class="voice-chip male"><div class="name">云枫</div><div class="desc">平淡务实 · 男配</div></div>
+      <div class="voice-chip dialect"><div class="name">云彪</div><div class="desc">东北 · 男</div></div>
+      <div class="voice-chip dialect"><div class="name">晓北</div><div class="desc">东北 · 女</div></div>
+      <div class="voice-chip dialect"><div class="name">云登</div><div class="desc">河南 · 男</div></div>
+      <div class="voice-chip dialect"><div class="name">云翔</div><div class="desc">山东 · 男</div></div>
+      <div class="voice-chip dialect"><div class="name">云熙</div><div class="desc">四川 · 男</div></div>
+      <div class="voice-chip dialect"><div class="name">云奇</div><div class="desc">广西 · 男</div></div>
+      <div class="voice-chip dialect"><div class="name">晓妮</div><div class="desc">陕西 · 女</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- Workflow -->
+<section id="workflow" class="quickstart">
+  <div class="container">
+    <h2 class="section-title">工作流程</h2>
+    <p class="section-sub">从文本输入到成品输出，全自动流水线</p>
+    <div class="workflow-steps">
+      <div class="wf-step"><div class="icon">📄</div><div class="label">文本/字幕<br>输入</div></div>
+      <div class="wf-arrow">→</div>
+      <div class="wf-step"><div class="icon">📑</div><div class="label">章节<br>拆分</div></div>
+      <div class="wf-arrow">→</div>
+      <div class="wf-step"><div class="icon">🔍</div><div class="label">角色<br>提取</div></div>
+      <div class="wf-arrow">→</div>
+      <div class="wf-step"><div class="icon">🎨</div><div class="label">音色<br>匹配</div></div>
+      <div class="wf-arrow">→</div>
+      <div class="wf-step"><div class="icon">✅</div><div class="label">用户<br>确认</div></div>
+      <div class="wf-arrow">→</div>
+      <div class="wf-step"><div class="icon">🔊</div><div class="label">并发<br>生成</div></div>
+      <div class="wf-arrow">→</div>
+      <div class="wf-step"><div class="icon">🎵</div><div class="label">合并<br>输出</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- Comparison -->
+<section id="comparison">
+  <div class="container">
+    <h2 class="section-title">为什么选择 Novel2Voice</h2>
+    <p class="section-sub">与其他方案对比</p>
+    <table class="compare-table">
+      <thead>
+        <tr><th>Feature</th><th>Novel2Voice</th><th>传统 TTS</th><th>在线朗读器</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>多角色自动分配</td><td class="yes">✅ LLM 识别</td><td class="no">❌ 手动</td><td class="no">❌ 单角色</td></tr>
+        <tr><td>情感/风格控制</td><td class="yes">✅ 50+ 标签</td><td class="partial">⚠️ 有限</td><td class="no">❌ 无</td></tr>
+        <tr><td>字幕转语音</td><td class="yes">✅ SRT/ASS</td><td class="no">❌</td><td class="no">❌</td></tr>
+        <tr><td>中文方言</td><td class="yes">✅ 9 种</td><td class="no">❌</td><td class="no">❌</td></tr>
+        <tr><td>并发生成</td><td class="yes">✅ 3-5x</td><td class="no">❌ 串行</td><td class="no">❌</td></tr>
+        <tr><td>音色数量</td><td class="yes">✅ 500+</td><td class="partial">⚠️ 几十个</td><td class="partial">⚠️ 几个</td></tr>
+        <tr><td>免费</td><td class="yes">✅ 完全免费</td><td class="partial">⚠️ 部分</td><td class="no">❌ 收费</td></tr>
+        <tr><td>无需 GPU</td><td class="yes">✅</td><td class="partial">⚠️ 部分需要</td><td class="yes">✅</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section id="faq" class="quickstart">
+  <div class="container">
+    <h2 class="section-title">FAQ</h2>
+    <p class="section-sub">常见问题</p>
+    <div class="faq-list">
+      <details class="faq-item">
+        <summary>需要 API Key 吗？</summary>
+        <div class="answer">默认使用 Edge TTS，完全免费，无需任何 Key。如果需要更高质量的音色（如音色复刻、唱歌），可以配置 MiMo TTS 的 API Key。</div>
+      </details>
+      <details class="faq-item">
+        <summary>支持哪些操作系统？</summary>
+        <div class="answer">Linux、macOS、Windows 全平台支持。只需要 Python 3.8+ 和 FFmpeg。</div>
+      </details>
+      <details class="faq-item">
+        <summary>生成速度如何？</summary>
+        <div class="answer">使用 --async --concurrent 5 参数，5 线程并发生成。一本 10 万字的小说大约需要 10-20 分钟（取决于网络速度）。</div>
+      </details>
+      <details class="faq-item">
+        <summary>角色识别不准怎么办？</summary>
+        <div class="answer">可以通过 --character-voices 参数手动指定角色→音色映射，例如：--character-voices '{"旁白":"云扬","张三":"云希"}'。</div>
+      </details>
+      <details class="faq-item">
+        <summary>支持哪些字幕格式？</summary>
+        <div class="answer">支持 SRT 和 ASS/SSA 格式，自动检测文件编码（UTF-8、GBK、Big5、Shift_JIS 等），自动修复重叠时间码。</div>
+      </details>
+      <details class="faq-item">
+        <summary>可以作为 Agent Skill 使用吗？</summary>
+        <div class="answer">可以。Novel2Voice 遵循 Agent Skills 标准，兼容 QoderWork、OpenClaw、Claude Code 等 skills-compatible runtime。一行命令安装：openclaw skills install @jangviktor-web/novel2voice</div>
+      </details>
+    </div>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer>
+  <div class="container">
+    <div class="footer-links">
+      <a href="https://github.com/jangviktor-web/novel2voice">GitHub</a>
+      <a href="https://github.com/jangviktor-web/novel2voice/blob/main/SKILL.md">Documentation</a>
+      <a href="https://github.com/jangviktor-web/novel2voice/blob/main/references/voice-catalog.md">Voice Catalog</a>
+      <a href="https://github.com/jangviktor-web/novel2voice/issues">Issues</a>
+    </div>
+    <p>Novel2Voice · MIT License · 让每一本小说都有声音</p>
+  </div>
+</footer>
+
+<script>
+function copyCode(btn) {
+  const block = btn.parentElement;
+  const text = block.innerText.replace('Copy', '').trim();
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = 'Copied!';
+    setTimeout(() => btn.textContent = 'Copy', 1500);
+  });
+}
+
+// Smooth reveal on scroll
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if (e.isIntersecting) { e.target.style.opacity = '1'; e.target.style.transform = 'translateY(0)'; }
+  });
+}, { threshold: 0.1 });
+
+document.querySelectorAll('.feature-card, .voice-chip, .wf-step').forEach(el => {
+  el.style.opacity = '0';
+  el.style.transform = 'translateY(20px)';
+  el.style.transition = 'opacity 0.5s, transform 0.5s';
+  observer.observe(el);
+});
+</script>
+</body>
+</html>
