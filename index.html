@@ -1,451 +1,878 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Novel2Voice — 小说/字幕转多角色语音</title>
-<meta name="description" content="将小说文本或视频字幕自动转化为多角色有声书。500+ 音色，自动角色识别，情感标注，异步并发生成。">
-<link rel="icon" type="image/png" href="assets/logo.png">
-<style>
-:root {
-  --bg: #0a1628;
-  --bg-deep: #060f1d;
-  --surface: #111f36;
-  --surface-hover: #162844;
-  --border: rgba(255,255,255,0.08);
-  --accent: #2dd4a8;
-  --accent-dim: #1a9e7a;
-  --accent-glow: rgba(45,212,168,0.15);
-  --navy: #0a3d62;
-  --text: #e8edf5;
-  --text-muted: #8899b0;
-  --text-dim: #5a6f8a;
-  --radius: 14px;
-  --radius-sm: 8px;
-}
-* { margin: 0; padding: 0; box-sizing: border-box; }
-html { scroll-behavior: smooth; }
-body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans SC', sans-serif;
-  background: var(--bg);
-  color: var(--text);
-  line-height: 1.7;
-  -webkit-font-smoothing: antialiased;
-}
-.container { max-width: 1140px; margin: 0 auto; padding: 0 24px; }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Novel2Voice - 小说转语音 | 多角色有声书生成器</title>
+    <meta name="description" content="Novel2Voice 是一个开源的文本转语音工具，专为小说、漫画、视频字幕等多角色场景设计。LLM 驱动的智能角色识别，500+ 高质量音色，异步并发生成。">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/prism.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-python.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-bash.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --secondary: #10b981;
+            --accent: #f59e0b;
+            --dark: #1e293b;
+            --darker: #0f172a;
+            --light: #f8fafc;
+            --gray: #64748b;
+            --card-bg: #ffffff;
+            --card-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        }
 
-/* ── Nav ── */
-nav {
-  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
-  background: rgba(10,22,40,0.85);
-  backdrop-filter: blur(12px);
-  border-bottom: 1px solid var(--border);
-}
-nav .container {
-  display: flex; align-items: center; justify-content: space-between;
-  height: 64px;
-}
-.nav-brand { display: flex; align-items: center; gap: 10px; text-decoration: none; }
-.nav-brand img { width: 32px; height: 32px; border-radius: 6px; }
-.nav-brand span { font-weight: 700; font-size: 1.1rem; color: var(--text); }
-.nav-links { display: flex; gap: 28px; align-items: center; }
-.nav-links a { color: var(--text-muted); text-decoration: none; font-size: 0.9rem; transition: color 0.2s; }
-.nav-links a:hover { color: var(--accent); }
-.nav-cta {
-  background: var(--accent); color: var(--bg-deep); padding: 8px 18px;
-  border-radius: var(--radius-sm); font-weight: 600; font-size: 0.85rem;
-  text-decoration: none; transition: all 0.2s;
-}
-.nav-cta:hover { background: #3eeabc; transform: translateY(-1px); }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-/* ── Hero ── */
-.hero {
-  padding: 160px 0 100px;
-  text-align: center;
-  background: radial-gradient(ellipse 80% 60% at 50% 20%, rgba(45,212,168,0.06) 0%, transparent 70%),
-              radial-gradient(ellipse 60% 50% at 80% 80%, rgba(10,61,98,0.2) 0%, transparent 60%);
-}
-.hero-logo { width: 120px; height: 120px; margin: 0 auto 32px; border-radius: 24px; }
-.hero h1 { font-size: 3.2rem; font-weight: 800; letter-spacing: -0.03em; margin-bottom: 16px; }
-.hero h1 .accent { color: var(--accent); }
-.hero .tagline { font-size: 1.25rem; color: var(--text-muted); max-width: 600px; margin: 0 auto 40px; }
-.hero-badges { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-bottom: 40px; }
-.badge {
-  display: inline-flex; align-items: center; gap: 6px;
-  padding: 6px 14px; border-radius: 20px; font-size: 0.8rem;
-  background: var(--surface); border: 1px solid var(--border); color: var(--text-muted);
-}
-.badge .dot { width: 7px; height: 7px; border-radius: 50%; }
-.hero-actions { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; }
-.btn-primary {
-  background: var(--accent); color: var(--bg-deep); padding: 14px 32px;
-  border-radius: var(--radius-sm); font-weight: 700; font-size: 1rem;
-  text-decoration: none; transition: all 0.2s; display: inline-flex; align-items: center; gap: 8px;
-}
-.btn-primary:hover { background: #3eeabc; transform: translateY(-2px); box-shadow: 0 8px 30px var(--accent-glow); }
-.btn-secondary {
-  background: var(--surface); color: var(--text); padding: 14px 32px;
-  border-radius: var(--radius-sm); font-weight: 600; font-size: 1rem;
-  text-decoration: none; border: 1px solid var(--border); transition: all 0.2s;
-}
-.btn-secondary:hover { border-color: var(--accent-dim); background: var(--surface-hover); }
+        body {
+            font-family: 'Inter', 'Noto Sans SC', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            color: var(--light);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
 
-/* ── Sections ── */
-section { padding: 80px 0; }
-.section-title { font-size: 2rem; font-weight: 700; text-align: center; margin-bottom: 12px; }
-.section-sub { text-align: center; color: var(--text-muted); margin-bottom: 48px; font-size: 1.05rem; }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
 
-/* ── Features ── */
-.features-grid {
-  display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-  gap: 20px;
-}
-.feature-card {
-  background: var(--surface); border: 1px solid var(--border);
-  border-radius: var(--radius); padding: 28px;
-  transition: all 0.25s;
-}
-.feature-card:hover { border-color: var(--accent-dim); transform: translateY(-3px); background: var(--surface-hover); }
-.feature-icon { font-size: 1.8rem; margin-bottom: 14px; }
-.feature-card h3 { font-size: 1.1rem; font-weight: 600; margin-bottom: 8px; }
-.feature-card p { color: var(--text-muted); font-size: 0.92rem; line-height: 1.6; }
+        /* Hero Section */
+        .hero {
+            text-align: center;
+            padding: 6rem 0;
+            background: radial-gradient(ellipse at top, #1e293b 0%, #0f172a 100%);
+        }
 
-/* ── Quick Start ── */
-.quickstart { background: var(--bg-deep); }
-.code-block {
-  background: #0d1a2d; border: 1px solid var(--border);
-  border-radius: var(--radius); padding: 24px 28px;
-  font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
-  font-size: 0.9rem; line-height: 1.8; overflow-x: auto;
-  position: relative; max-width: 720px; margin: 0 auto;
-}
-.code-block .comment { color: var(--text-dim); }
-.code-block .cmd { color: var(--accent); }
-.code-block .flag { color: #7cb3ff; }
-.copy-btn {
-  position: absolute; top: 12px; right: 12px;
-  background: var(--surface); border: 1px solid var(--border);
-  color: var(--text-muted); padding: 6px 12px; border-radius: 6px;
-  cursor: pointer; font-size: 0.75rem; transition: all 0.2s;
-}
-.copy-btn:hover { color: var(--accent); border-color: var(--accent-dim); }
+        .logo {
+            width: 120px;
+            height: 120px;
+            margin: 0 auto 2rem;
+            border-radius: 24px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            box-shadow: 0 20px 40px -12px rgba(99, 102, 241, 0.4);
+        }
 
-/* ── Voices ── */
-.voice-grid {
-  display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-  gap: 12px;
-}
-.voice-chip {
-  background: var(--surface); border: 1px solid var(--border);
-  border-radius: var(--radius-sm); padding: 14px 16px;
-  text-align: center; transition: all 0.2s; cursor: default;
-}
-.voice-chip:hover { border-color: var(--accent-dim); background: var(--surface-hover); }
-.voice-chip .name { font-weight: 600; font-size: 1rem; margin-bottom: 4px; }
-.voice-chip .desc { font-size: 0.75rem; color: var(--text-muted); }
-.voice-chip.female { border-left: 3px solid #d4789c; }
-.voice-chip.male { border-left: 3px solid #6aabdb; }
-.voice-chip.dialect { border-left: 3px solid #7cc98a; }
+        .title {
+            font-size: 3.5rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, #fff 0%, #a5b4fc 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
 
-/* ── Workflow ── */
-.workflow-steps {
-  display: flex; gap: 0; align-items: center; justify-content: center;
-  flex-wrap: wrap; margin-top: 40px;
-}
-.wf-step {
-  display: flex; flex-direction: column; align-items: center; gap: 8px;
-  padding: 20px 16px; min-width: 120px;
-}
-.wf-step .icon { font-size: 2rem; }
-.wf-step .label { font-size: 0.85rem; color: var(--text-muted); text-align: center; }
-.wf-arrow { color: var(--text-dim); font-size: 1.4rem; padding: 0 4px; }
+        .subtitle {
+            font-size: 1.5rem;
+            color: var(--gray);
+            margin-bottom: 2rem;
+            font-weight: 400;
+        }
 
-/* ── Comparison ── */
-.compare-table {
-  width: 100%; border-collapse: collapse; font-size: 0.9rem;
-  background: var(--surface); border-radius: var(--radius); overflow: hidden;
-}
-.compare-table th, .compare-table td { padding: 14px 18px; text-align: center; border-bottom: 1px solid var(--border); }
-.compare-table th { background: var(--navy); color: var(--text); font-weight: 600; }
-.compare-table td:first-child { text-align: left; font-weight: 500; }
-.compare-table tr:last-child td { border-bottom: none; }
-.compare-table .yes { color: var(--accent); }
-.compare-table .no { color: #e05555; }
-.compare-table .partial { color: #e0a030; }
+        .badges {
+            display: flex;
+            gap: 0.75rem;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: 2rem;
+        }
 
-/* ── FAQ ── */
-.faq-list { max-width: 720px; margin: 0 auto; }
-.faq-item { border-bottom: 1px solid var(--border); }
-.faq-item summary {
-  padding: 20px 0; cursor: pointer; font-weight: 600; font-size: 1rem;
-  list-style: none; display: flex; justify-content: space-between; align-items: center;
-}
-.faq-item summary::after { content: '+'; font-size: 1.4rem; color: var(--text-dim); transition: transform 0.2s; }
-.faq-item[open] summary::after { transform: rotate(45deg); }
-.faq-item .answer { padding: 0 0 20px; color: var(--text-muted); font-size: 0.92rem; line-height: 1.7; }
+        .badge {
+            padding: 0.5rem 1rem;
+            border-radius: 9999px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
 
-/* ── Footer ── */
-footer {
-  border-top: 1px solid var(--border); padding: 48px 0;
-  text-align: center; color: var(--text-dim); font-size: 0.85rem;
-}
-footer a { color: var(--accent); text-decoration: none; }
-footer .footer-links { display: flex; gap: 24px; justify-content: center; margin-bottom: 16px; }
+        .badge-python {
+            background: rgba(234, 179, 8, 0.15);
+            color: #eab308;
+            border: 1px solid rgba(234, 179, 8, 0.3);
+        }
 
-/* ── Responsive ── */
-@media (max-width: 768px) {
-  .hero h1 { font-size: 2.2rem; }
-  .hero .tagline { font-size: 1.05rem; }
-  .nav-links { display: none; }
-  .features-grid { grid-template-columns: 1fr; }
-  .workflow-steps { flex-direction: column; }
-  .wf-arrow { transform: rotate(90deg); }
-  .compare-table { font-size: 0.8rem; }
-  .compare-table th, .compare-table td { padding: 10px 8px; }
-}
-</style>
+        .badge-ffmpeg {
+            background: rgba(16, 185, 129, 0.15);
+            color: #10b981;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+
+        .badge-edge {
+            background: rgba(249, 115, 22, 0.15);
+            color: #f97316;
+            border: 1px solid rgba(249, 115, 22, 0.3);
+        }
+
+        .badge-mimo {
+            background: rgba(168, 85, 247, 0.15);
+            color: #a855f7;
+            border: 1px solid rgba(168, 85, 247, 0.3);
+        }
+
+        .badge-license {
+            background: rgba(168, 85, 247, 0.15);
+            color: #a855f7;
+            border: 1px solid rgba(168, 85, 247, 0.3);
+        }
+
+        /* Buttons */
+        .btn-group {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            margin-bottom: 4rem;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 0.875rem 2rem;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+            box-shadow: 0 4px 14px 0 rgba(99, 102, 241, 0.39);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px 0 rgba(99, 102, 241, 0.23);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        /* Features Section */
+        .features {
+            padding: 4rem 0;
+        }
+
+        .section-title {
+            text-align: center;
+            font-size: 2.25rem;
+            font-weight: 700;
+            margin-bottom: 3rem;
+            background: linear-gradient(135deg, #fff 0%, #a5b4fc 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .feature-card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 2rem;
+            color: var(--dark);
+            transition: all 0.2s ease;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--card-shadow);
+        }
+
+        .feature-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .feature-icon-purple {
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+            color: white;
+        }
+
+        .feature-icon-green {
+            background: linear-gradient(135deg, #10b981 0%, #34d399 100%);
+            color: white;
+        }
+
+        .feature-icon-orange {
+            background: linear-gradient(135deg, #f97316 0%, #fb923c 100%);
+            color: white;
+        }
+
+        .feature-icon-blue {
+            background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%);
+            color: white;
+        }
+
+        .feature-icon-pink {
+            background: linear-gradient(135deg, #ec4899 0%, #f472b6 100%);
+            color: white;
+        }
+
+        .feature-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 0.75rem;
+            color: var(--dark);
+        }
+
+        .feature-desc {
+            color: var(--gray);
+            font-size: 0.95rem;
+        }
+
+        /* Quick Start Section */
+        .quickstart {
+            padding: 4rem 0;
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .steps-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 2rem;
+            margin-top: 3rem;
+        }
+
+        .step-card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 2rem;
+            color: var(--dark);
+        }
+
+        .step-number {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+            font-size: 1.25rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1rem;
+        }
+
+        .step-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: var(--dark);
+        }
+
+        .step-desc {
+            color: var(--gray);
+            font-size: 0.9rem;
+        }
+
+        .code-block {
+            background: #1e293b;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-top: 1.5rem;
+            overflow-x: auto;
+        }
+
+        .code-block pre {
+            margin: 0;
+        }
+
+        .code-block code {
+            font-family: 'Fira Code', 'Consolas', monospace;
+            font-size: 0.875rem;
+            line-height: 1.5;
+        }
+
+        .code-block .comment {
+            color: #64748b;
+        }
+
+        .code-block .command {
+            color: #10b981;
+        }
+
+        /* Voice Library Preview */
+        .voices {
+            padding: 4rem 0;
+        }
+
+        .voices-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+
+        .voice-card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 1.5rem;
+            color: var(--dark);
+            text-align: center;
+            transition: all 0.2s ease;
+        }
+
+        .voice-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--card-shadow);
+        }
+
+        .voice-name {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: var(--dark);
+        }
+
+        .voice-line {
+            font-size: 0.875rem;
+            color: var(--gray);
+        }
+
+        .voice-gender {
+            font-size: 0.75rem;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            display: inline-block;
+            margin-top: 0.5rem;
+        }
+
+        .voice-gender-female {
+            background: #fce7f3;
+            color: #db2777;
+        }
+
+        .voice-gender-male {
+            background: #dbeafe;
+            color: #2563eb;
+        }
+
+        /* Comparison Section */
+        .comparison {
+            padding: 4rem 0;
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 2rem;
+            background: var(--card-bg);
+            border-radius: 16px;
+            overflow: hidden;
+        }
+
+        .comparison-table th,
+        .comparison-table td {
+            padding: 1rem 1.5rem;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .comparison-table th {
+            background: #f8fafc;
+            font-weight: 600;
+            color: var(--dark);
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .comparison-table tr:hover {
+            background: #f8fafc;
+        }
+
+        .comparison-table td:first-child {
+            font-weight: 600;
+            color: var(--dark);
+        }
+
+        .check {
+            color: #10b981;
+        }
+
+        .cross {
+            color: #ef4444;
+        }
+
+        /* Docs Section */
+        .docs {
+            padding: 4rem 0;
+        }
+
+        .docs-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+
+        .doc-card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 1.5rem;
+            color: var(--dark);
+            text-decoration: none;
+            transition: all 0.2s ease;
+            border: 1px solid transparent;
+        }
+
+        .doc-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--card-shadow);
+            border-color: var(--primary);
+        }
+
+        .doc-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1rem;
+        }
+
+        .doc-title {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: var(--dark);
+        }
+
+        .doc-desc {
+            color: var(--gray);
+            font-size: 0.9rem;
+        }
+
+        /* Footer */
+        .footer {
+            padding: 3rem 0;
+            text-align: center;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .footer-text {
+            color: var(--gray);
+            font-size: 0.9rem;
+        }
+
+        .footer-text a {
+            color: var(--primary);
+            text-decoration: none;
+        }
+
+        .footer-text a:hover {
+            text-decoration: underline;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .title {
+                font-size: 2.25rem;
+            }
+
+            .subtitle {
+                font-size: 1.125rem;
+            }
+
+            .btn-group {
+                flex-direction: column;
+                width: 100%;
+                max-width: 300px;
+            }
+
+            .features-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .comparison-table {
+                font-size: 0.875rem;
+            }
+
+            .comparison-table th,
+            .comparison-table td {
+                padding: 0.75rem 1rem;
+            }
+        }
+    </style>
 </head>
 <body>
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="container">
+            <div class="logo">🎙️</div>
+            <h1 class="title">Novel2Voice</h1>
+            <p class="subtitle">小说 / 视频字幕 → 多角色有声书，一步到位</p>
+            <div class="badges">
+                <span class="badge badge-python">🐍 Python 3.8+</span>
+                <span class="badge badge-ffmpeg">🎬 FFmpeg</span>
+                <span class="badge badge-edge">🎤 500+ 音色</span>
+                <span class="badge badge-mimo">🎵 MiMo TTS</span>
+                <span class="badge badge-license">📜 MIT License</span>
+            </div>
+            <div class="btn-group">
+                <a href="https://github.com/jangviktor-web/novel2voice" class="btn btn-primary">
+                    <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+                    </svg>
+                    GitHub
+                </a>
+                <a href="#quickstart" class="btn btn-secondary">⚡ Quick Start</a>
+            </div>
+        </div>
+    </section>
 
-<!-- Nav -->
-<nav>
-  <div class="container">
-    <a class="nav-brand" href="#">
-      <img src="assets/logo.png" alt="Novel2Voice">
-      <span>Novel2Voice</span>
-    </a>
-    <div class="nav-links">
-      <a href="#features">Features</a>
-      <a href="#quickstart">Quick Start</a>
-      <a href="#voices">Voices</a>
-      <a href="#faq">FAQ</a>
-      <a class="nav-cta" href="https://github.com/jangviktor-web/novel2voice" target="_blank">GitHub</a>
-    </div>
-  </div>
-</nav>
+    <!-- Features Section -->
+    <section class="features">
+        <div class="container">
+            <h2 class="section-title">核心功能</h2>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon feature-icon-purple">🎭</div>
+                    <h3 class="feature-title">多角色自动识别</h3>
+                    <p class="feature-desc">LLM 分析角色性别、年龄、性格，自动匹配最佳音色</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon feature-icon-green">🎤</div>
+                    <h3 class="feature-title">500+ 高质量音色</h3>
+                    <p class="feature-desc">Edge TTS 覆盖 100+ 语言/地区，MiMo TTS 提供小米音色</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon feature-icon-orange">🎨</div>
+                    <h3 class="feature-title">50+ 情感风格控制</h3>
+                    <p class="feature-desc">温柔/愤怒/悲伤/撒娇等行内标签，支持方言、唱歌模式</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon feature-icon-blue">⚡</div>
+                    <h3 class="feature-title">异步并发生成</h3>
+                    <p class="feature-desc">多线程 TTS，速度提升 3-5x，支持断点续传</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon feature-icon-pink">📝</div>
+                    <h3 class="feature-title">字幕完美对齐</h3>
+                    <p class="feature-desc">自动检测 SRT/ASS 编码，按时间轴精确生成</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon feature-icon-purple">🎵</div>
+                    <h3 class="feature-title">章节智能拆分</h3>
+                    <p class="feature-desc">自动识别「第X章/回/节」，按章合并输出</p>
+                </div>
+            </div>
+        </div>
+    </section>
 
-<!-- Hero -->
-<section class="hero">
-  <div class="container">
-    <img class="hero-logo" src="assets/logo.png" alt="Novel2Voice Logo">
-    <h1>Novel<span class="accent">2</span>Voice</h1>
-    <p class="tagline">将小说文本或视频字幕，自动转化为多角色有声书。<br>500+ 音色 · 自动角色识别 · 情感标注 · 异步并发生成</p>
-    <div class="hero-badges">
-      <span class="badge"><span class="dot" style="background:var(--accent)"></span>Edge TTS 500+ 音色</span>
-      <span class="badge"><span class="dot" style="background:#7cb3ff"></span>MiMo TTS 9 音色</span>
-      <span class="badge"><span class="dot" style="background:#e0a030"></span>Python 3.8+</span>
-      <span class="badge"><span class="dot" style="background:#7cc98a"></span>MIT License</span>
-    </div>
-    <div class="hero-actions">
-      <a class="btn-primary" href="#quickstart">开始使用</a>
-      <a class="btn-secondary" href="https://github.com/jangviktor-web/novel2voice" target="_blank">View on GitHub</a>
-    </div>
-  </div>
-</section>
+    <!-- Quick Start Section -->
+    <section class="quickstart" id="quickstart">
+        <div class="container">
+            <h2 class="section-title">快速开始</h2>
+            <div class="steps-container">
+                <div class="step-card">
+                    <div class="step-number">1</div>
+                    <h3 class="step-title">安装依赖</h3>
+                    <p class="step-desc">安装 FFmpeg 和 Python 依赖</p>
+                    <div class="code-block">
+                        <pre><code><span class="comment"># 安装 FFmpeg</span>
+<span class="command">apt install ffmpeg</span>  <span class="comment"># Ubuntu/Debian</span>
+<span class="command">brew install ffmpeg</span> <span class="comment"># macOS</span>
 
-<!-- Features -->
-<section id="features">
-  <div class="container">
-    <h2 class="section-title">核心能力</h2>
-    <p class="section-sub">从文本到有声书，全流程自动化</p>
-    <div class="features-grid">
-      <div class="feature-card">
-        <div class="feature-icon">🎭</div>
-        <h3>多角色自动分配</h3>
-        <p>LLM 分析角色性别、年龄、性格特征，自动匹配最佳音色，无需手动配置。</p>
-      </div>
-      <div class="feature-card">
-        <div class="feature-icon">🎨</div>
-        <h3>情感风格控制</h3>
-        <p>50+ 情感标签：温柔、愤怒、悲伤、撒娇、东北话、唱歌模式……一行标签即可控制语气。</p>
-      </div>
-      <div class="feature-card">
-        <div class="feature-icon">📝</div>
-        <h3>字幕转语音</h3>
-        <p>支持 SRT/ASS 字幕文件，多编码自动检测，按时间轴对齐生成，视频配音一步到位。</p>
-      </div>
-      <div class="feature-card">
-        <div class="feature-icon">⚡</div>
-        <h3>异步并发生成</h3>
-        <p>多线程 TTS 并发请求，速度提升 3-5 倍。支持断点续传，中断后自动继续。</p>
-      </div>
-      <div class="feature-card">
-        <div class="feature-icon">🔊</div>
-        <h3>500+ 音色库</h3>
-        <p>Edge TTS 覆盖 100+ 语言/地区。中文 28 个精品音色，含 9 种方言、粤语、台湾腔。</p>
-      </div>
-      <div class="feature-card">
-        <div class="feature-icon">🎚️</div>
-        <h3>专业后处理</h3>
-        <p>EBU R128 响度标准化、按章合并、ID3 标签写入，输出即可发布的 MP3 有声书。</p>
-      </div>
-    </div>
-  </div>
-</section>
+<span class="comment"># 安装 Python 依赖</span>
+pip install requests charset_normalizer</code></pre>
+                    </div>
+                </div>
+                <div class="step-card">
+                    <div class="step-number">2</div>
+                    <h3 class="step-title">生成有声书</h3>
+                    <p class="step-desc">自动模式：LLM 识别角色 → 分配音色 → 生成</p>
+                    <div class="code-block">
+                        <pre><code><span class="command">python3 scripts/generate_audiobook.py --auto novel.txt ./output</span></code></pre>
+                    </div>
+                </div>
+                <div class="step-card">
+                    <div class="step-number">3</div>
+                    <h3 class="step-title">查看结果</h3>
+                    <p class="step-desc">生成文件位于 output 目录</p>
+                    <div class="code-block">
+                        <pre><code>output/
+├── output_complete.mp3
+├── chapters/
+│   ├── 001_第一章.mp3
+│   └── 002_第二章.mp3</code></pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
 
-<!-- Quick Start -->
-<section id="quickstart" class="quickstart">
-  <div class="container">
-    <h2 class="section-title">Quick Start</h2>
-    <p class="section-sub">三步开始，无需 API Key</p>
-    <div class="code-block">
-      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
-      <span class="comment"># 1. 安装</span><br>
-      <span class="cmd">openclaw skills install</span> <span class="flag">@jangviktor-web/novel2voice</span><br><br>
-      <span class="comment"># 2. 生成有声书（自动识别角色）</span><br>
-      <span class="cmd">python3</span> scripts/generate_audiobook.py <span class="flag">--auto</span> novel.txt ./output<br><br>
-      <span class="comment"># 3. 异步并发（推荐，3-5x 加速）</span><br>
-      <span class="cmd">python3</span> scripts/generate_audiobook.py <span class="flag">--auto</span> novel.txt ./output <span class="flag">--async --concurrent</span> 5
-    </div>
-  </div>
-</section>
+    <!-- Voice Library Preview -->
+    <section class="voices">
+        <div class="container">
+            <h2 class="section-title">音色库预览</h2>
+            <p style="text-align: center; color: var(--gray);">包含 28 个中文音色 + 9 个 MiMo 音色</p>
+            <div class="voices-grid">
+                <div class="voice-card">
+                    <div class="voice-name">晓晓</div>
+                    <div class="voice-line">清亮标准播音</div>
+                    <div class="voice-gender voice-gender-female">女声</div>
+                </div>
+                <div class="voice-card">
+                    <div class="voice-name">云扬</div>
+                    <div class="voice-line">央视浑厚播音</div>
+                    <div class="voice-gender voice-gender-male">男声</div>
+                </div>
+                <div class="voice-card">
+                    <div class="voice-name">晓依</div>
+                    <div class="voice-line">低沉温柔治愈</div>
+                    <div class="voice-gender voice-gender-female">女声</div>
+                </div>
+                <div class="voice-card">
+                    <div class="voice-name">云希</div>
+                    <div class="voice-line">清爽阳光少年</div>
+                    <div class="voice-gender voice-gender-male">男声</div>
+                </div>
+                <div class="voice-card">
+                    <div class="voice-name">晓涵</div>
+                    <div class="voice-line">文艺清冷</div>
+                    <div class="voice-gender voice-gender-female">女声</div>
+                </div>
+                <div class="voice-card">
+                    <div class="voice-name">晓墨</div>
+                    <div class="voice-line">情绪丰富</div>
+                    <div class="voice-gender voice-gender-female">女声</div>
+                </div>
+                <div class="voice-card">
+                    <div class="voice-name">晓睿</div>
+                    <div class="voice-line">稳重厚实中年</div>
+                    <div class="voice-gender voice-gender-female">女声</div>
+                </div>
+                <div class="voice-card">
+                    <div class="voice-name">云健</div>
+                    <div class="voice-line">低沉浑厚大叔</div>
+                    <div class="voice-gender voice-gender-male">男声</div>
+                </div>
+                <div class="voice-card">
+                    <div class="voice-name">冰糖</div>
+                    <div class="voice-line">清甜治愈</div>
+                    <div class="voice-gender voice-gender-female">MiMo</div>
+                </div>
+                <div class="voice-card">
+                    <div class="voice-name">茉莉</div>
+                    <div class="voice-line">软糯温柔</div>
+                    <div class="voice-gender voice-gender-female">MiMo</div>
+                </div>
+                <div class="voice-card">
+                    <div class="voice-name">苏打</div>
+                    <div class="voice-line">清亮少年</div>
+                    <div class="voice-gender voice-gender-male">MiMo</div>
+                </div>
+                <div class="voice-card">
+                    <div class="voice-name">白桦</div>
+                    <div class="voice-line">苍老沉稳</div>
+                    <div class="voice-gender voice-gender-male">MiMo</div>
+                </div>
+            </div>
+            <p style="text-align: center; margin-top: 1.5rem; color: var(--primary);">
+                <a href="https://github.com/jangviktor-web/novel2voice/blob/main/README.md#voice-library" style="text-decoration: underline;">
+                    查看完整音色库 →
+                </a>
+            </p>
+        </div>
+    </section>
 
-<!-- Voices -->
-<section id="voices">
-  <div class="container">
-    <h2 class="section-title">音色库</h2>
-    <p class="section-sub">28 个中文精品音色 + 9 个 MiMo 音色，覆盖所有角色类型</p>
-    <div class="voice-grid">
-      <div class="voice-chip female"><div class="name">晓晓</div><div class="desc">清亮播音 · 旁白/女主</div></div>
-      <div class="voice-chip female"><div class="name">晓依</div><div class="desc">温柔治愈 · 人妻</div></div>
-      <div class="voice-chip female"><div class="name">晓涵</div><div class="desc">文艺清冷 · 闺秀</div></div>
-      <div class="voice-chip female"><div class="name">晓墨</div><div class="desc">情绪丰富 · 侠女</div></div>
-      <div class="voice-chip female"><div class="name">晓睿</div><div class="desc">稳重中年 · 长辈</div></div>
-      <div class="voice-chip female"><div class="name">晓双</div><div class="desc">清脆孩童 · 丫鬟</div></div>
-      <div class="voice-chip female"><div class="name">晓梦</div><div class="desc">软萌甜妹 · 学妹</div></div>
-      <div class="voice-chip male"><div class="name">云希</div><div class="desc">阳光少年 · 男主</div></div>
-      <div class="voice-chip male"><div class="name">云扬</div><div class="desc">浑厚播音 · 帝王</div></div>
-      <div class="voice-chip male"><div class="name">云健</div><div class="desc">低沉大叔 · 武将</div></div>
-      <div class="voice-chip male"><div class="name">云夏</div><div class="desc">正太童声 · 师弟</div></div>
-      <div class="voice-chip male"><div class="name">云泽</div><div class="desc">苍老沉稳 · 高人</div></div>
-      <div class="voice-chip male"><div class="name">云枫</div><div class="desc">平淡务实 · 男配</div></div>
-      <div class="voice-chip dialect"><div class="name">云彪</div><div class="desc">东北 · 男</div></div>
-      <div class="voice-chip dialect"><div class="name">晓北</div><div class="desc">东北 · 女</div></div>
-      <div class="voice-chip dialect"><div class="name">云登</div><div class="desc">河南 · 男</div></div>
-      <div class="voice-chip dialect"><div class="name">云翔</div><div class="desc">山东 · 男</div></div>
-      <div class="voice-chip dialect"><div class="name">云熙</div><div class="desc">四川 · 男</div></div>
-      <div class="voice-chip dialect"><div class="name">云奇</div><div class="desc">广西 · 男</div></div>
-      <div class="voice-chip dialect"><div class="name">晓妮</div><div class="desc">陕西 · 女</div></div>
-    </div>
-  </div>
-</section>
+    <!-- Comparison Section -->
+    <section class="comparison">
+        <div class="container">
+            <h2 class="section-title">产品对比</h2>
+            <table class="comparison-table">
+                <thead>
+                    <tr>
+                        <th>特性</th>
+                        <th>Novel2Voice</th>
+                        <th>ebook2audiobook</th>
+                        <th>传统 TTS</th>
+                        <th>在线朗读器</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>多角色自动分配</td>
+                        <td><span class="check">✅ LLM 识别</span></td>
+                        <td><span class="check">✅</span></td>
+                        <td><span class="cross">❌</span></td>
+                        <td><span class="cross">❌</span></td>
+                    </tr>
+                    <tr>
+                        <td>情感/风格控制</td>
+                        <td><span class="check">✅ 50+ 标签</span></td>
+                        <td><span class="check">✅</span></td>
+                        <td><span class="check">⚠️</span></td>
+                        <td><span class="cross">❌</span></td>
+                    </tr>
+                    <tr>
+                        <td>字幕转语音</td>
+                        <td><span class="check">✅ SRT/ASS</span></td>
+                        <td><span class="cross">❌</span></td>
+                        <td><span class="cross">❌</span></td>
+                        <td><span class="cross">❌</span></td>
+                    </tr>
+                    <tr>
+                        <td>并发生成</td>
+                        <td><span class="check">✅ 3-5x 加速</span></td>
+                        <td><span class="check">✅</span></td>
+                        <td><span class="cross">❌</span></td>
+                        <td><span class="cross">❌</span></td>
+                    </tr>
+                    <tr>
+                        <td>音色数量</td>
+                        <td><span class="check">✅ 500+</span></td>
+                        <td><span class="check">✅</span></td>
+                        <td><span class="check">⚠️</span></td>
+                        <td><span class="check">⚠️</span></td>
+                    </tr>
+                    <tr>
+                        <td>中文方言</td>
+                        <td><span class="check">✅ 9 种</span></td>
+                        <td><span class="cross">❌</span></td>
+                        <td><span class="cross">❌</span></td>
+                        <td><span class="cross">❌</span></td>
+                    </tr>
+                    <tr>
+                        <td>断点续传</td>
+                        <td><span class="check">✅</span></td>
+                        <td><span class="check">✅</span></td>
+                        <td><span class="cross">❌</span></td>
+                        <td><span class="cross">❌</span></td>
+                    </tr>
+                    <tr>
+                        <td>完全免费</td>
+                        <td><span class="check">✅</span></td>
+                        <td><span class="check">✅</span></td>
+                        <td><span class="check">⚠️</span></td>
+                        <td><span class="cross">❌</span></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
 
-<!-- Workflow -->
-<section id="workflow" class="quickstart">
-  <div class="container">
-    <h2 class="section-title">工作流程</h2>
-    <p class="section-sub">从文本输入到成品输出，全自动流水线</p>
-    <div class="workflow-steps">
-      <div class="wf-step"><div class="icon">📄</div><div class="label">文本/字幕<br>输入</div></div>
-      <div class="wf-arrow">→</div>
-      <div class="wf-step"><div class="icon">📑</div><div class="label">章节<br>拆分</div></div>
-      <div class="wf-arrow">→</div>
-      <div class="wf-step"><div class="icon">🔍</div><div class="label">角色<br>提取</div></div>
-      <div class="wf-arrow">→</div>
-      <div class="wf-step"><div class="icon">🎨</div><div class="label">音色<br>匹配</div></div>
-      <div class="wf-arrow">→</div>
-      <div class="wf-step"><div class="icon">✅</div><div class="label">用户<br>确认</div></div>
-      <div class="wf-arrow">→</div>
-      <div class="wf-step"><div class="icon">🔊</div><div class="label">并发<br>生成</div></div>
-      <div class="wf-arrow">→</div>
-      <div class="wf-step"><div class="icon">🎵</div><div class="label">合并<br>输出</div></div>
-    </div>
-  </div>
-</section>
+    <!-- Documentation Section -->
+    <section class="docs">
+        <div class="container">
+            <h2 class="section-title">文档资源</h2>
+            <div class="docs-grid">
+                <a href="https://github.com/jangviktor-web/novel2voice/blob/main/README.md" class="doc-card">
+                    <div class="doc-icon">📖</div>
+                    <h3 class="doc-title">完整文档</h3>
+                    <p class="doc-desc">快速开始、功能介绍、使用示例</p>
+                </a>
+                <a href="https://github.com/jangviktor-web/novel2voice/blob/main/README.md#voice-library" class="doc-card">
+                    <div class="doc-icon">🎤</div>
+                    <h3 class="doc-title">音色库</h3>
+                    <p class="doc-desc">28 个中文音色 + 9 个 MiMo 音色</p>
+                </a>
+                <a href="https://github.com/jangviktor-web/novel2voice/blob/main/README.md#features" class="doc-card">
+                    <div class="doc-icon">✨</div>
+                    <h3 class="doc-title">功能详解</h3>
+                    <p class="doc-desc">多角色识别、情感风格、字幕转换</p>
+                </a>
+                <a href="https://github.com/jangviktor-web/novel2voice/blob/main/README.md#usage" class="doc-card">
+                    <div class="doc-icon">💡</div>
+                    <h3 class="doc-title">使用指南</h3>
+                    <p class="doc-desc">基础用法、高级选项、故障排除</p>
+                </a>
+            </div>
+        </div>
+    </section>
 
-<!-- Comparison -->
-<section id="comparison">
-  <div class="container">
-    <h2 class="section-title">为什么选择 Novel2Voice</h2>
-    <p class="section-sub">与其他方案对比</p>
-    <table class="compare-table">
-      <thead>
-        <tr><th>Feature</th><th>Novel2Voice</th><th>传统 TTS</th><th>在线朗读器</th></tr>
-      </thead>
-      <tbody>
-        <tr><td>多角色自动分配</td><td class="yes">✅ LLM 识别</td><td class="no">❌ 手动</td><td class="no">❌ 单角色</td></tr>
-        <tr><td>情感/风格控制</td><td class="yes">✅ 50+ 标签</td><td class="partial">⚠️ 有限</td><td class="no">❌ 无</td></tr>
-        <tr><td>字幕转语音</td><td class="yes">✅ SRT/ASS</td><td class="no">❌</td><td class="no">❌</td></tr>
-        <tr><td>中文方言</td><td class="yes">✅ 9 种</td><td class="no">❌</td><td class="no">❌</td></tr>
-        <tr><td>并发生成</td><td class="yes">✅ 3-5x</td><td class="no">❌ 串行</td><td class="no">❌</td></tr>
-        <tr><td>音色数量</td><td class="yes">✅ 500+</td><td class="partial">⚠️ 几十个</td><td class="partial">⚠️ 几个</td></tr>
-        <tr><td>免费</td><td class="yes">✅ 完全免费</td><td class="partial">⚠️ 部分</td><td class="no">❌ 收费</td></tr>
-        <tr><td>无需 GPU</td><td class="yes">✅</td><td class="partial">⚠️ 部分需要</td><td class="yes">✅</td></tr>
-      </tbody>
-    </table>
-  </div>
-</section>
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <p class="footer-text">
+                Built with ❤️ for novel lovers · Powered by
+                <a href="https://learn.microsoft.com/en-us/azure/ai-services/speech-service/" target="_blank">Edge TTS</a>
+                & <a href="https://mimo.xiaomi.com" target="_blank">MiMo TTS</a>
+            </p>
+            <p class="footer-text" style="margin-top: 0.5rem;">
+                <a href="https://github.com/jangviktor-web/novel2voice" target="_blank">GitHub</a>
+                ·
+                <a href="https://github.com/jangviktor-web/novel2voice/issues" target="_blank">Issues</a>
+                ·
+                <a href="https://github.com/jangviktor-web/novel2voice/discussions" target="_blank">Discussions</a>
+            </p>
+        </div>
+    </footer>
 
-<!-- FAQ -->
-<section id="faq" class="quickstart">
-  <div class="container">
-    <h2 class="section-title">FAQ</h2>
-    <p class="section-sub">常见问题</p>
-    <div class="faq-list">
-      <details class="faq-item">
-        <summary>需要 API Key 吗？</summary>
-        <div class="answer">默认使用 Edge TTS，完全免费，无需任何 Key。如果需要更高质量的音色（如音色复刻、唱歌），可以配置 MiMo TTS 的 API Key。</div>
-      </details>
-      <details class="faq-item">
-        <summary>支持哪些操作系统？</summary>
-        <div class="answer">Linux、macOS、Windows 全平台支持。只需要 Python 3.8+ 和 FFmpeg。</div>
-      </details>
-      <details class="faq-item">
-        <summary>生成速度如何？</summary>
-        <div class="answer">使用 --async --concurrent 5 参数，5 线程并发生成。一本 10 万字的小说大约需要 10-20 分钟（取决于网络速度）。</div>
-      </details>
-      <details class="faq-item">
-        <summary>角色识别不准怎么办？</summary>
-        <div class="answer">可以通过 --character-voices 参数手动指定角色→音色映射，例如：--character-voices '{"旁白":"云扬","张三":"云希"}'。</div>
-      </details>
-      <details class="faq-item">
-        <summary>支持哪些字幕格式？</summary>
-        <div class="answer">支持 SRT 和 ASS/SSA 格式，自动检测文件编码（UTF-8、GBK、Big5、Shift_JIS 等），自动修复重叠时间码。</div>
-      </details>
-      <details class="faq-item">
-        <summary>可以作为 Agent Skill 使用吗？</summary>
-        <div class="answer">可以。Novel2Voice 遵循 Agent Skills 标准，兼容 QoderWork、OpenClaw、Claude Code 等 skills-compatible runtime。一行命令安装：openclaw skills install @jangviktor-web/novel2voice</div>
-      </details>
-    </div>
-  </div>
-</section>
+    <script>
+        // Smooth scroll for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                document.querySelector(this.getAttribute('href')).scrollIntoView({
+                    behavior: 'smooth'
+                });
+            });
+        });
 
-<!-- Footer -->
-<footer>
-  <div class="container">
-    <div class="footer-links">
-      <a href="https://github.com/jangviktor-web/novel2voice">GitHub</a>
-      <a href="https://github.com/jangviktor-web/novel2voice/blob/main/SKILL.md">Documentation</a>
-      <a href="https://github.com/jangviktor-web/novel2voice/blob/main/references/voice-catalog.md">Voice Catalog</a>
-      <a href="https://github.com/jangviktor-web/novel2voice/issues">Issues</a>
-    </div>
-    <p>Novel2Voice · MIT License · 让每一本小说都有声音</p>
-  </div>
-</footer>
+        // Add animation on scroll
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        };
 
-<script>
-function copyCode(btn) {
-  const block = btn.parentElement;
-  const text = block.innerText.replace('Copy', '').trim();
-  navigator.clipboard.writeText(text).then(() => {
-    btn.textContent = 'Copied!';
-    setTimeout(() => btn.textContent = 'Copy', 1500);
-  });
-}
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        }, observerOptions);
 
-// Smooth reveal on scroll
-const observer = new IntersectionObserver((entries) => {
-  entries.forEach(e => {
-    if (e.isIntersecting) { e.target.style.opacity = '1'; e.target.style.transform = 'translateY(0)'; }
-  });
-}, { threshold: 0.1 });
-
-document.querySelectorAll('.feature-card, .voice-chip, .wf-step').forEach(el => {
-  el.style.opacity = '0';
-  el.style.transform = 'translateY(20px)';
-  el.style.transition = 'opacity 0.5s, transform 0.5s';
-  observer.observe(el);
-});
-</script>
+        document.querySelectorAll('.feature-card, .step-card, .voice-card, .doc-card').forEach(el => {
+            el.style.opacity = '0';
+            el.style.transform = 'translateY(20px)';
+            el.style.transition = 'all 0.6s ease';
+            observer.observe(el);
+        });
+    </script>
 </body>
 </html>
