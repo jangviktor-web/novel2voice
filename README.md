@@ -17,7 +17,7 @@
 
 <br/>
 
-<a href="#-quick-start">Quick Start</a> · <a href="#-features">Features</a> · <a href="#-voice-library">Voices</a> · <a href="#-usage">Usage</a> · <a href="#-workflow">Workflow</a> · <a href="#-comparison">Comparison</a> · <a href="references/">Docs</a>
+<a href="#-quick-start">Quick Start</a> · <a href="#-Features">Features</a> · <a href="#-voice-library">Voices</a> · <a href="#-usage">Usage</a> · <a href="#-workflow">Workflow</a> · <a href="#-comparison">Comparison</a> · <a href="references/">Docs</a>
 
 </div>
 
@@ -37,6 +37,49 @@
 | 📖 | **章节拆分** | 自动识别「第X章/回/节」，按章合并输出 |
 | 🔁 | **断点续传** | 中断后自动跳过已完成片段，继续生成 |
 | 🎚️ | **响度标准化** | EBU R128 标准响度归一化，听感一致 |
+
+---
+## 📦 Installation   安装教程
+
+### 方式一：ClawHub 一键安装（推荐）
+
+```bash
+openclaw skills install @jangviktor-web/novel2voice
+```
+
+### 方式二：直接克隆
+
+```bash
+git clone https://github.com/jangviktor-web/novel2voice-clawskill.git
+cd novel2voice-clawskill
+pip install requests charset_normalizer
+```
+
+### 方式三：一键安装脚本
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/jangviktor-web/novel2voice-clawskill/main/install.sh | bash
+```
+
+### 方式四：手动放入 Skills 目录
+
+```bash
+# QoderWork / OpenClaw / Claude Code 等 skills-compatible runtime
+cp -r novel2voice-clawskill ~/.qoderworkcn/skills/novel2voice
+```
+
+### 环境要求
+
+| 依赖 | 版本 | 用途 | 必须 |
+|---|---|---|---|
+| Python | ≥ 3.8 | 主脚本运行 | ✅ |
+| FFmpeg | 任意 | MP3 编码 + 响度标准化 | ✅ |
+| requests | 最新 | HTTP 请求 TTS API | ✅ |
+| charset_normalizer | 最新 | 字幕文件编码检测 | 推荐 |
+| 网络连接 | — | 调用 Edge TTS / MiMo API | ✅ |
+
+> [!NOTE]
+> Edge TTS 为默认后端，无需 API Key，开箱即用。MiMo TTS 需要额外设置 `MIMO_API_KEY`。
 
 ---
 
@@ -287,49 +330,6 @@ graph LR
 
 ---
 
-## 📦 Installation
-
-### 方式一：ClawHub 一键安装（推荐）
-
-```bash
-openclaw skills install @jangviktor-web/novel2voice
-```
-
-### 方式二：直接克隆
-
-```bash
-git clone https://github.com/jangviktor-web/novel2voice-clawskill.git
-cd novel2voice-clawskill
-pip install requests charset_normalizer
-```
-
-### 方式三：一键安装脚本
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/jangviktor-web/novel2voice-clawskill/main/install.sh | bash
-```
-
-### 方式四：手动放入 Skills 目录
-
-```bash
-# QoderWork / OpenClaw / Claude Code 等 skills-compatible runtime
-cp -r novel2voice-clawskill ~/.qoderworkcn/skills/novel2voice
-```
-
-### 环境要求
-
-| 依赖 | 版本 | 用途 | 必须 |
-|---|---|---|---|
-| Python | ≥ 3.8 | 主脚本运行 | ✅ |
-| FFmpeg | 任意 | MP3 编码 + 响度标准化 | ✅ |
-| requests | 最新 | HTTP 请求 TTS API | ✅ |
-| charset_normalizer | 最新 | 字幕文件编码检测 | 推荐 |
-| 网络连接 | — | 调用 Edge TTS / MiMo API | ✅ |
-
-> [!NOTE]
-> Edge TTS 为默认后端，无需 API Key，开箱即用。MiMo TTS 需要额外设置 `MIMO_API_KEY`。
-
----
 
 ## 📁 Structure
 
