@@ -289,7 +289,13 @@ graph LR
 
 ## 📦 Installation
 
-### 方式一：直接克隆
+### 方式一：ClawHub 一键安装（推荐）
+
+```bash
+openclaw skills install @jangviktor-web/novel2voice
+```
+
+### 方式二：直接克隆
 
 ```bash
 git clone https://github.com/jangviktor-web/novel2voice-clawskill.git
@@ -297,17 +303,16 @@ cd novel2voice-clawskill
 pip install requests charset_normalizer
 ```
 
-### 方式二：一键安装脚本
+### 方式三：一键安装脚本
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/jangviktor-web/novel2voice-clawskill/main/install.sh | bash
 ```
 
-### 方式三：作为 Agent Skill 安装
+### 方式四：手动放入 Skills 目录
 
 ```bash
 # QoderWork / OpenClaw / Claude Code 等 skills-compatible runtime
-# 将本仓库放入 skills 目录即可
 cp -r novel2voice-clawskill ~/.qoderworkcn/skills/novel2voice
 ```
 
