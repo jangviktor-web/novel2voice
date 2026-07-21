@@ -7,722 +7,819 @@
     <meta name="description" content="Novel2Voice 是一个开源的文本转语音工具，专为小说、漫画、视频字幕等多角色场景设计。LLM 驱动的智能角色识别，500+ 高质量音色，异步并发生成。">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/prism.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-python.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-bash.min.js"></script>
-    <link href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=Source+Serif+4:ital,opsz,wght@0,8..60,300;0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <style>
         :root {
-            --primary: #6366f1;
-            --primary-dark: #4f46e5;
-            --secondary: #10b981;
-            --accent: #f59e0b;
-            --dark: #1e293b;
-            --darker: #0f172a;
-            --light: #f8fafc;
-            --gray: #64748b;
-            --card-bg: #ffffff;
-            --card-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            --bg-deep: #080908;
+            --bg-surface: #0e100e;
+            --bg-card: rgba(255, 255, 255, 0.025);
+            --border-card: rgba(255, 255, 255, 0.07);
+            --accent-gold: #d4a634;
+            --accent-gold-dim: rgba(212, 166, 52, 0.12);
+            --accent-gold-glow: rgba(212, 166, 52, 0.35);
+            --accent-green: #3cb371;
+            --accent-green-dim: rgba(60, 179, 113, 0.12);
+            --text-primary: #eee9dd;
+            --text-secondary: rgba(238, 233, 221, 0.5);
+            --text-muted: rgba(238, 233, 221, 0.3);
+            --font-display: 'Syne', sans-serif;
+            --font-body: 'Source Serif 4', Georgia, serif;
+            --font-mono: 'JetBrains Mono', monospace;
         }
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        html { scroll-behavior: smooth; }
 
         body {
-            font-family: 'Inter', 'Noto Sans SC', -apple-system, BlinkMacSystemFont, sans-serif;
-            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
-            color: var(--light);
-            line-height: 1.6;
+            font-family: var(--font-body);
+            background: var(--bg-deep);
+            color: var(--text-primary);
+            line-height: 1.75;
             min-height: 100vh;
+            overflow-x: hidden;
         }
 
+        /* ── Noise grain overlay ── */
+        body::after {
+            content: '';
+            position: fixed; inset: 0;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+            opacity: 0.035;
+            pointer-events: none;
+            z-index: 9999;
+        }
+
+        /* ── Ambient glow ── */
+        .ambient {
+            position: fixed; top: 0; left: 0;
+            width: 100%; height: 100%;
+            pointer-events: none; z-index: 0;
+        }
+        .ambient::before {
+            content: '';
+            position: absolute;
+            top: 15%; left: -10%;
+            width: 500px; height: 500px;
+            background: radial-gradient(circle, var(--accent-gold-glow) 0%, transparent 65%);
+            opacity: 0.15;
+            animation: drift 20s ease-in-out infinite alternate;
+        }
+        .ambient::after {
+            content: '';
+            position: absolute;
+            bottom: 10%; right: -5%;
+            width: 400px; height: 400px;
+            background: radial-gradient(circle, rgba(60, 179, 113, 0.25) 0%, transparent 65%);
+            opacity: 0.12;
+            animation: drift 25s ease-in-out infinite alternate-reverse;
+        }
+        @keyframes drift {
+            0% { transform: translate(0, 0) scale(1); }
+            100% { transform: translate(60px, -40px) scale(1.15); }
+        }
+
+        /* ── Layout ── */
         .container {
-            max-width: 1200px;
+            max-width: 1140px;
             margin: 0 auto;
             padding: 0 2rem;
+            position: relative;
+            z-index: 1;
         }
 
-        /* Hero Section */
-        .hero {
-            text-align: center;
-            padding: 6rem 0;
-            background: radial-gradient(ellipse at top, #1e293b 0%, #0f172a 100%);
+        /* ── Nav ── */
+        nav {
+            position: fixed; top: 0; left: 0; right: 0;
+            z-index: 100;
+            padding: 0.875rem 0;
+            backdrop-filter: blur(24px) saturate(1.2);
+            background: rgba(8, 9, 8, 0.72);
+            border-bottom: 1px solid var(--border-card);
         }
-
-        .logo {
-            width: 120px;
-            height: 120px;
-            margin: 0 auto 2rem;
-            border-radius: 24px;
-            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+        .nav-inner {
             display: flex;
+            justify-content: space-between;
             align-items: center;
-            justify-content: center;
-            font-size: 3rem;
-            box-shadow: 0 20px 40px -12px rgba(99, 102, 241, 0.4);
         }
+        .logo {
+            font-family: var(--font-display);
+            font-size: 1.35rem;
+            font-weight: 800;
+            color: var(--text-primary);
+            text-decoration: none;
+            letter-spacing: -0.02em;
+        }
+        .logo em {
+            font-style: normal;
+            color: var(--accent-gold);
+        }
+        .nav-links {
+            display: flex; gap: 2rem;
+            list-style: none;
+        }
+        .nav-links a {
+            font-family: var(--font-display);
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.82rem;
+            font-weight: 500;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            transition: color 0.25s;
+        }
+        .nav-links a:hover { color: var(--accent-gold); }
 
-        .title {
-            font-size: 3.5rem;
-            font-weight: 700;
-            margin-bottom: 1rem;
-            background: linear-gradient(135deg, #fff 0%, #a5b4fc 100%);
+        /* ── Hero ── */
+        .hero {
+            min-height: 100vh;
+            display: flex; align-items: center; justify-content: center;
+            text-align: center;
+            padding: 8rem 0 4rem;
+            position: relative;
+        }
+        .hero-eyebrow {
+            display: inline-flex; align-items: center; gap: 0.5rem;
+            padding: 0.4rem 1rem;
+            background: var(--accent-gold-dim);
+            border: 1px solid rgba(212, 166, 52, 0.2);
+            border-radius: 999px;
+            font-family: var(--font-display);
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: var(--accent-gold);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-bottom: 2rem;
+        }
+        .hero-title {
+            font-family: var(--font-display);
+            font-size: clamp(3rem, 7vw, 5.5rem);
+            font-weight: 800;
+            letter-spacing: -0.035em;
+            line-height: 1;
+            margin-bottom: 1.25rem;
+        }
+        .hero-title span {
+            background: linear-gradient(135deg, var(--text-primary) 20%, var(--accent-gold) 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
         }
-
-        .subtitle {
-            font-size: 1.5rem;
-            color: var(--gray);
-            margin-bottom: 2rem;
-            font-weight: 400;
+        .hero-sub {
+            font-size: clamp(1.05rem, 2vw, 1.35rem);
+            color: var(--text-secondary);
+            max-width: 540px;
+            margin: 0 auto 2rem;
+            font-weight: 300;
         }
-
-        .badges {
-            display: flex;
-            gap: 0.75rem;
+        .tags {
+            display: flex; flex-wrap: wrap; gap: 0.6rem;
             justify-content: center;
-            flex-wrap: wrap;
-            margin-bottom: 2rem;
+            margin-bottom: 2.5rem;
         }
-
-        .badge {
-            padding: 0.5rem 1rem;
-            border-radius: 9999px;
-            font-size: 0.875rem;
-            font-weight: 500;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
+        .tag {
+            font-family: var(--font-mono);
+            font-size: 0.72rem;
+            padding: 0.3rem 0.75rem;
+            border-radius: 999px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-card);
+            color: var(--text-secondary);
         }
+        .tag--gold { color: var(--accent-gold); border-color: rgba(212, 166, 52, 0.15); }
+        .tag--green { color: var(--accent-green); border-color: rgba(60, 179, 113, 0.15); }
+        .tag--warm { color: #e07845; border-color: rgba(224, 120, 69, 0.15); }
 
-        .badge-python {
-            background: rgba(234, 179, 8, 0.15);
-            color: #eab308;
-            border: 1px solid rgba(234, 179, 8, 0.3);
+        .hero-ctas {
+            display: flex; gap: 1rem;
+            justify-content: center; flex-wrap: wrap;
+            margin-bottom: 5rem;
         }
-
-        .badge-ffmpeg {
-            background: rgba(16, 185, 129, 0.15);
-            color: #10b981;
-            border: 1px solid rgba(16, 185, 129, 0.3);
-        }
-
-        .badge-edge {
-            background: rgba(249, 115, 22, 0.15);
-            color: #f97316;
-            border: 1px solid rgba(249, 115, 22, 0.3);
-        }
-
-        .badge-mimo {
-            background: rgba(168, 85, 247, 0.15);
-            color: #a855f7;
-            border: 1px solid rgba(168, 85, 247, 0.3);
-        }
-
-        .badge-license {
-            background: rgba(168, 85, 247, 0.15);
-            color: #a855f7;
-            border: 1px solid rgba(168, 85, 247, 0.3);
-        }
-
-        /* Buttons */
-        .btn-group {
-            display: flex;
-            gap: 1rem;
-            justify-content: center;
-            margin-bottom: 4rem;
-            flex-wrap: wrap;
-        }
-
         .btn {
-            padding: 0.875rem 2rem;
-            border-radius: 12px;
-            font-size: 1rem;
+            display: inline-flex; align-items: center; gap: 0.5rem;
+            padding: 0.8rem 1.75rem;
+            border-radius: 10px;
+            font-family: var(--font-display);
+            font-size: 0.95rem;
             font-weight: 600;
             text-decoration: none;
-            transition: all 0.2s ease;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
-
         .btn-primary {
-            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-            color: white;
-            box-shadow: 0 4px 14px 0 rgba(99, 102, 241, 0.39);
+            background: var(--accent-gold);
+            color: #0a0906;
+            box-shadow: 0 4px 24px var(--accent-gold-glow);
         }
-
         .btn-primary:hover {
             transform: translateY(-2px);
-            box-shadow: 0 6px 20px 0 rgba(99, 102, 241, 0.23);
+            box-shadow: 0 8px 36px var(--accent-gold-glow);
         }
-
-        .btn-secondary {
-            background: rgba(255, 255, 255, 0.1);
-            color: white;
-            border: 1px solid rgba(255, 255, 255, 0.2);
+        .btn-ghost {
+            background: var(--bg-card);
+            color: var(--text-primary);
+            border: 1px solid var(--border-card);
         }
-
-        .btn-secondary:hover {
-            background: rgba(255, 255, 255, 0.15);
+        .btn-ghost:hover {
+            background: rgba(255, 255, 255, 0.06);
+            border-color: rgba(255, 255, 255, 0.14);
         }
+        .btn svg { flex-shrink: 0; }
 
-        /* Features Section */
-        .features {
-            padding: 4rem 0;
+        /* ── Stats row ── */
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1.25rem;
         }
-
-        .section-title {
+        .stat {
+            background: var(--bg-card);
+            border: 1px solid var(--border-card);
+            border-radius: 14px;
+            padding: 1.75rem 1.25rem;
             text-align: center;
-            font-size: 2.25rem;
+            transition: all 0.3s;
+        }
+        .stat:hover {
+            transform: translateY(-3px);
+            border-color: rgba(212, 166, 52, 0.2);
+        }
+        .stat-val {
+            font-family: var(--font-display);
+            font-size: 2.2rem;
+            font-weight: 800;
+            color: var(--accent-gold);
+            letter-spacing: -0.02em;
+        }
+        .stat-lbl {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-top: 0.25rem;
+        }
+
+        /* ── Sections ── */
+        .section { padding: 6rem 0; }
+        .section--alt { background: var(--bg-surface); }
+
+        .section-head {
+            text-align: center;
+            margin-bottom: 3.5rem;
+        }
+        .section-tag {
+            font-family: var(--font-display);
+            display: inline-block;
+            font-size: 0.7rem;
             font-weight: 700;
-            margin-bottom: 3rem;
-            background: linear-gradient(135deg, #fff 0%, #a5b4fc 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        .features-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 1.5rem;
-        }
-
-        .feature-card {
-            background: var(--card-bg);
-            border-radius: 16px;
-            padding: 2rem;
-            color: var(--dark);
-            transition: all 0.2s ease;
-        }
-
-        .feature-card:hover {
-            transform: translateY(-4px);
-            box-shadow: var(--card-shadow);
-        }
-
-        .feature-icon {
-            width: 48px;
-            height: 48px;
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.5rem;
-            margin-bottom: 1.5rem;
-        }
-
-        .feature-icon-purple {
-            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
-            color: white;
-        }
-
-        .feature-icon-green {
-            background: linear-gradient(135deg, #10b981 0%, #34d399 100%);
-            color: white;
-        }
-
-        .feature-icon-orange {
-            background: linear-gradient(135deg, #f97316 0%, #fb923c 100%);
-            color: white;
-        }
-
-        .feature-icon-blue {
-            background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%);
-            color: white;
-        }
-
-        .feature-icon-pink {
-            background: linear-gradient(135deg, #ec4899 0%, #f472b6 100%);
-            color: white;
-        }
-
-        .feature-title {
-            font-size: 1.25rem;
-            font-weight: 600;
-            margin-bottom: 0.75rem;
-            color: var(--dark);
-        }
-
-        .feature-desc {
-            color: var(--gray);
-            font-size: 0.95rem;
-        }
-
-        /* Quick Start Section */
-        .quickstart {
-            padding: 4rem 0;
-            background: rgba(255, 255, 255, 0.02);
-        }
-
-        .steps-container {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 2rem;
-            margin-top: 3rem;
-        }
-
-        .step-card {
-            background: var(--card-bg);
-            border-radius: 16px;
-            padding: 2rem;
-            color: var(--dark);
-        }
-
-        .step-number {
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-            color: white;
-            font-size: 1.25rem;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            text-transform: uppercase;
+            letter-spacing: 0.14em;
+            color: var(--accent-gold);
+            padding: 0.3rem 0.9rem;
+            border: 1px solid rgba(212, 166, 52, 0.2);
+            border-radius: 999px;
             margin-bottom: 1rem;
         }
+        .section-title {
+            font-family: var(--font-display);
+            font-size: clamp(1.8rem, 4vw, 2.8rem);
+            font-weight: 800;
+            letter-spacing: -0.025em;
+        }
+        .section-sub {
+            color: var(--text-secondary);
+            font-size: 1.05rem;
+            max-width: 520px;
+            margin: 0.75rem auto 0;
+        }
 
-        .step-title {
+        /* ── Features ── */
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1.25rem;
+        }
+        .feat {
+            background: var(--bg-card);
+            border: 1px solid var(--border-card);
+            border-radius: 14px;
+            padding: 2rem 1.5rem;
+            transition: all 0.3s;
+        }
+        .feat:hover {
+            transform: translateY(-3px);
+            border-color: rgba(212, 166, 52, 0.15);
+            background: rgba(255, 255, 255, 0.035);
+        }
+        .feat-icon {
+            width: 44px; height: 44px;
+            border-radius: 11px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.3rem;
+            margin-bottom: 1.25rem;
+        }
+        .feat-icon--gold { background: var(--accent-gold-dim); }
+        .feat-icon--green { background: var(--accent-green-dim); }
+        .feat-icon--warm { background: rgba(224, 120, 69, 0.1); }
+        .feat h3 {
+            font-family: var(--font-display);
             font-size: 1.1rem;
-            font-weight: 600;
+            font-weight: 700;
             margin-bottom: 0.5rem;
-            color: var(--dark);
         }
-
-        .step-desc {
-            color: var(--gray);
+        .feat p {
             font-size: 0.9rem;
+            color: var(--text-secondary);
+            line-height: 1.65;
         }
 
-        .code-block {
-            background: #1e293b;
-            border-radius: 12px;
-            padding: 1.5rem;
-            margin-top: 1.5rem;
+        /* ── Install cards ── */
+        .install-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1.25rem;
+        }
+        .install {
+            background: var(--bg-card);
+            border: 1px solid var(--border-card);
+            border-radius: 14px;
+            padding: 1.75rem;
+            transition: all 0.3s;
+        }
+        .install:hover {
+            border-color: rgba(212, 166, 52, 0.2);
+        }
+        .install--rec {
+            border-color: var(--accent-gold);
+            background: linear-gradient(135deg, var(--accent-gold-dim) 0%, rgba(60, 179, 113, 0.06) 100%);
+        }
+        .install--rec:hover {
+            background: linear-gradient(135deg, rgba(212, 166, 52, 0.16) 0%, rgba(60, 179, 113, 0.08) 100%);
+        }
+        .install-num {
+            font-family: var(--font-display);
+            width: 30px; height: 30px;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.82rem;
+            font-weight: 700;
+            margin-bottom: 0.875rem;
+            background: rgba(255, 255, 255, 0.06);
+        }
+        .install--rec .install-num {
+            background: var(--accent-gold);
+            color: #0a0906;
+        }
+        .install h3 {
+            font-family: var(--font-display);
+            font-size: 1rem;
+            font-weight: 700;
+            margin-bottom: 0.375rem;
+        }
+        .install--rec h3 { color: var(--accent-gold); }
+        .install .desc {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-bottom: 1rem;
+        }
+        .code-box {
+            background: rgba(0, 0, 0, 0.35);
+            border: 1px solid var(--border-card);
+            border-radius: 8px;
+            padding: 0.875rem 1rem;
             overflow-x: auto;
         }
-
-        .code-block pre {
-            margin: 0;
+        .code-box code {
+            font-family: var(--font-mono);
+            font-size: 0.76rem;
+            color: var(--text-primary);
+            white-space: pre;
         }
 
-        .code-block code {
-            font-family: 'Fira Code', 'Consolas', monospace;
-            font-size: 0.875rem;
-            line-height: 1.5;
+        .deps-check {
+            margin-top: 1.5rem;
+            padding: 1.25rem 1.5rem;
+            background: var(--accent-green-dim);
+            border: 1px solid rgba(60, 179, 113, 0.2);
+            border-radius: 10px;
+        }
+        .deps-check h4 {
+            font-family: var(--font-display);
+            color: var(--accent-green);
+            font-weight: 700;
+            font-size: 0.88rem;
+            margin-bottom: 0.375rem;
+        }
+        .deps-check p {
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            line-height: 1.6;
+        }
+        .deps-check code {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 0.15rem 0.45rem;
+            border-radius: 4px;
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
         }
 
-        .code-block .comment {
-            color: #64748b;
-        }
-
-        .code-block .command {
-            color: #10b981;
-        }
-
-        /* Voice Library Preview */
-        .voices {
-            padding: 4rem 0;
-        }
-
-        .voices-grid {
+        /* ── Voice grid ── */
+        .voice-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
             gap: 1rem;
-            margin-top: 2rem;
         }
-
-        .voice-card {
-            background: var(--card-bg);
+        .voice {
+            background: var(--bg-card);
+            border: 1px solid var(--border-card);
             border-radius: 12px;
-            padding: 1.5rem;
-            color: var(--dark);
+            padding: 1.35rem 1rem;
             text-align: center;
-            transition: all 0.2s ease;
+            transition: all 0.3s;
         }
-
-        .voice-card:hover {
-            transform: translateY(-4px);
-            box-shadow: var(--card-shadow);
+        .voice:hover {
+            transform: translateY(-3px);
+            border-color: rgba(212, 166, 52, 0.25);
         }
-
         .voice-name {
-            font-weight: 600;
-            margin-bottom: 0.5rem;
-            color: var(--dark);
+            font-family: var(--font-display);
+            font-weight: 700;
+            margin-bottom: 0.3rem;
         }
-
         .voice-line {
-            font-size: 0.875rem;
-            color: var(--gray);
+            font-size: 0.82rem;
+            color: var(--text-secondary);
         }
-
-        .voice-gender {
-            font-size: 0.75rem;
-            padding: 0.25rem 0.75rem;
-            border-radius: 9999px;
+        .voice-tag {
+            font-family: var(--font-mono);
+            font-size: 0.65rem;
+            padding: 0.15rem 0.65rem;
+            border-radius: 999px;
             display: inline-block;
             margin-top: 0.5rem;
         }
+        .voice-tag--f { background: rgba(236, 72, 153, 0.12); color: #e87da3; }
+        .voice-tag--m { background: rgba(59, 130, 246, 0.12); color: #6da3f0; }
+        .voice-tag--mimo { background: var(--accent-gold-dim); color: var(--accent-gold); }
 
-        .voice-gender-female {
-            background: #fce7f3;
-            color: #db2777;
-        }
-
-        .voice-gender-male {
-            background: #dbeafe;
-            color: #2563eb;
-        }
-
-        /* Comparison Section */
-        .comparison {
-            padding: 4rem 0;
-            background: rgba(255, 255, 255, 0.02);
-        }
-
-        .comparison-table {
+        /* ── Comparison table ── */
+        .cmp-table {
             width: 100%;
-            border-collapse: collapse;
-            margin-top: 2rem;
-            background: var(--card-bg);
-            border-radius: 16px;
+            border-collapse: separate;
+            border-spacing: 0;
+            background: var(--bg-card);
+            border: 1px solid var(--border-card);
+            border-radius: 14px;
             overflow: hidden;
         }
-
-        .comparison-table th,
-        .comparison-table td {
-            padding: 1rem 1.5rem;
+        .cmp-table th {
+            font-family: var(--font-display);
+            background: rgba(0, 0, 0, 0.25);
+            padding: 0.875rem 1.25rem;
             text-align: left;
-            border-bottom: 1px solid #e2e8f0;
-        }
-
-        .comparison-table th {
-            background: #f8fafc;
-            font-weight: 600;
-            color: var(--dark);
-            font-size: 0.875rem;
+            font-size: 0.78rem;
+            font-weight: 700;
             text-transform: uppercase;
-            letter-spacing: 0.05em;
+            letter-spacing: 0.06em;
+            color: var(--text-primary);
         }
-
-        .comparison-table tr:hover {
-            background: #f8fafc;
+        .cmp-table td {
+            padding: 0.875rem 1.25rem;
+            border-bottom: 1px solid var(--border-card);
+            font-size: 0.9rem;
         }
-
-        .comparison-table td:first-child {
+        .cmp-table td:first-child {
+            font-family: var(--font-display);
             font-weight: 600;
-            color: var(--dark);
         }
+        .cmp-table tr:last-child td { border-bottom: none; }
+        .yes { color: var(--accent-green); }
+        .no { color: #d94f4f; }
 
-        .check {
-            color: #10b981;
-        }
-
-        .cross {
-            color: #ef4444;
-        }
-
-        /* Docs Section */
-        .docs {
-            padding: 4rem 0;
-        }
-
+        /* ── Doc cards ── */
         .docs-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 1.5rem;
-            margin-top: 2rem;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1.25rem;
         }
-
         .doc-card {
-            background: var(--card-bg);
-            border-radius: 16px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-card);
+            border-radius: 14px;
             padding: 1.5rem;
-            color: var(--dark);
+            color: var(--text-primary);
             text-decoration: none;
-            transition: all 0.2s ease;
-            border: 1px solid transparent;
+            transition: all 0.3s;
         }
-
         .doc-card:hover {
-            transform: translateY(-4px);
-            box-shadow: var(--card-shadow);
-            border-color: var(--primary);
+            transform: translateY(-3px);
+            border-color: var(--accent-gold);
+            background: rgba(212, 166, 52, 0.04);
         }
-
-        .doc-icon {
-            width: 48px;
-            height: 48px;
-            border-radius: 12px;
-            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-            color: white;
-            font-size: 1.5rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+        .doc-card .ic {
+            width: 42px; height: 42px;
+            border-radius: 10px;
+            background: var(--accent-gold-dim);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.25rem;
             margin-bottom: 1rem;
         }
-
-        .doc-title {
-            font-weight: 600;
-            margin-bottom: 0.5rem;
-            color: var(--dark);
+        .doc-card h3 {
+            font-family: var(--font-display);
+            font-size: 1rem;
+            font-weight: 700;
+            margin-bottom: 0.375rem;
+        }
+        .doc-card p {
+            color: var(--text-secondary);
+            font-size: 0.85rem;
         }
 
-        .doc-desc {
-            color: var(--gray);
-            font-size: 0.9rem;
-        }
-
-        /* Footer */
-        .footer {
-            padding: 3rem 0;
+        /* ── Footer ── */
+        footer {
+            padding: 3.5rem 0;
+            border-top: 1px solid var(--border-card);
             text-align: center;
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
         }
-
-        .footer-text {
-            color: var(--gray);
-            font-size: 0.9rem;
+        footer .flinks {
+            display: flex; gap: 1.5rem;
+            justify-content: center; flex-wrap: wrap;
+            margin-bottom: 1.25rem;
         }
-
-        .footer-text a {
-            color: var(--primary);
+        footer a {
+            font-family: var(--font-display);
+            color: var(--text-secondary);
             text-decoration: none;
+            font-size: 0.85rem;
+            font-weight: 500;
+            transition: color 0.25s;
         }
+        footer a:hover { color: var(--accent-gold); }
+        footer p { color: var(--text-muted); font-size: 0.82rem; }
+        footer p a { color: var(--accent-gold); font-size: inherit; }
 
-        .footer-text a:hover {
-            text-decoration: underline;
+        /* ── Animations ── */
+        .fade-up {
+            opacity: 0;
+            transform: translateY(28px);
+            transition: opacity 0.65s cubic-bezier(0.4, 0, 0.2, 1),
+                        transform 0.65s cubic-bezier(0.4, 0, 0.2, 1);
         }
+        .fade-up.in { opacity: 1; transform: translateY(0); }
 
-        /* Responsive */
-        @media (max-width: 768px) {
-            .title {
-                font-size: 2.25rem;
-            }
+        /* stagger children */
+        .stagger > *:nth-child(1) { transition-delay: 0s; }
+        .stagger > *:nth-child(2) { transition-delay: 0.06s; }
+        .stagger > *:nth-child(3) { transition-delay: 0.12s; }
+        .stagger > *:nth-child(4) { transition-delay: 0.18s; }
+        .stagger > *:nth-child(5) { transition-delay: 0.24s; }
+        .stagger > *:nth-child(6) { transition-delay: 0.3s; }
 
-            .subtitle {
-                font-size: 1.125rem;
-            }
-
-            .btn-group {
-                flex-direction: column;
-                width: 100%;
-                max-width: 300px;
-            }
-
-            .features-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .comparison-table {
-                font-size: 0.875rem;
-            }
-
-            .comparison-table th,
-            .comparison-table td {
-                padding: 0.75rem 1rem;
-            }
+        /* ── Responsive ── */
+        @media (max-width: 900px) {
+            .features-grid { grid-template-columns: repeat(2, 1fr); }
+            .install-grid { grid-template-columns: 1fr; }
+            .docs-grid { grid-template-columns: repeat(2, 1fr); }
+            .stats { grid-template-columns: repeat(2, 1fr); }
+        }
+        @media (max-width: 600px) {
+            .nav-links { display: none; }
+            .features-grid { grid-template-columns: 1fr; }
+            .docs-grid { grid-template-columns: 1fr; }
+            .hero-title { font-size: 2.4rem; }
+            .hero-ctas { flex-direction: column; align-items: center; }
+            .hero-ctas .btn { width: 100%; max-width: 280px; justify-content: center; }
+            .cmp-table { font-size: 0.8rem; }
+            .cmp-table th, .cmp-table td { padding: 0.6rem 0.75rem; }
         }
     </style>
 </head>
 <body>
-    <!-- Hero Section -->
-    <section class="hero">
-        <div class="container">
-            <div class="logo">🎙️</div>
-            <h1 class="title">Novel2Voice</h1>
-            <p class="subtitle">小说 / 视频字幕 → 多角色有声书，一步到位</p>
-            <div class="badges">
-                <span class="badge badge-python">🐍 Python 3.8+</span>
-                <span class="badge badge-ffmpeg">🎬 FFmpeg</span>
-                <span class="badge badge-edge">🎤 500+ 音色</span>
-                <span class="badge badge-mimo">🎵 MiMo TTS</span>
-                <span class="badge badge-license">📜 MIT License</span>
+
+<div class="ambient"></div>
+
+<!-- ── Nav ── -->
+<nav>
+    <div class="container nav-inner">
+        <a href="#" class="logo">Novel2<em>Voice</em></a>
+        <ul class="nav-links">
+            <li><a href="#features">功能特性</a></li>
+            <li><a href="#quickstart">快速开始</a></li>
+            <li><a href="#voices">音色库</a></li>
+            <li><a href="#compare">对比</a></li>
+            <li><a href="#docs">文档</a></li>
+        </ul>
+    </div>
+</nav>
+
+<!-- ── Hero ── -->
+<section class="hero">
+    <div class="container">
+        <div class="hero-eyebrow fade-up">开源免费 · 500+ 音色 · LLM 驱动</div>
+        <h1 class="hero-title fade-up"><span>Novel2Voice</span></h1>
+        <p class="hero-sub fade-up">小说 / 视频字幕 → 多角色有声书，一步到位</p>
+        <div class="tags fade-up">
+            <span class="tag tag--gold">Python 3.8+</span>
+            <span class="tag tag--green">FFmpeg</span>
+            <span class="tag tag--warm">500+ 音色</span>
+            <span class="tag tag--gold">MiMo TTS</span>
+            <span class="tag">MIT License</span>
+        </div>
+        <div class="hero-ctas fade-up">
+            <a href="https://github.com/jangviktor-web/novel2voice" class="btn btn-primary">
+                <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+                GitHub
+            </a>
+            <a href="#quickstart" class="btn btn-ghost">快速开始</a>
+        </div>
+
+        <div class="stats fade-up stagger">
+            <div class="stat fade-up">
+                <div class="stat-val">500+</div>
+                <div class="stat-lbl">高质量音色</div>
             </div>
-            <div class="btn-group">
-                <a href="https://github.com/jangviktor-web/novel2voice" class="btn btn-primary">
-                    <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
-                    </svg>
-                    GitHub
-                </a>
-                <a href="#quickstart" class="btn btn-secondary">⚡ Quick Start</a>
+            <div class="stat fade-up">
+                <div class="stat-val">3-5x</div>
+                <div class="stat-lbl">并发生成速度</div>
+            </div>
+            <div class="stat fade-up">
+                <div class="stat-val">50+</div>
+                <div class="stat-lbl">情感风格标签</div>
+            </div>
+            <div class="stat fade-up">
+                <div class="stat-val">9</div>
+                <div class="stat-lbl">方言支持</div>
             </div>
         </div>
-    </section>
+    </div>
+</section>
 
-    <!-- Features Section -->
-    <section class="features">
-        <div class="container">
+<!-- ── Features ── -->
+<section id="features" class="section">
+    <div class="container">
+        <div class="section-head fade-up">
+            <span class="section-tag">Features</span>
             <h2 class="section-title">核心功能</h2>
-            <div class="features-grid">
-                <div class="feature-card">
-                    <div class="feature-icon feature-icon-purple">🎭</div>
-                    <h3 class="feature-title">多角色自动识别</h3>
-                    <p class="feature-desc">LLM 分析角色性别、年龄、性格，自动匹配最佳音色</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon feature-icon-green">🎤</div>
-                    <h3 class="feature-title">500+ 高质量音色</h3>
-                    <p class="feature-desc">Edge TTS 覆盖 100+ 语言/地区，MiMo TTS 提供小米音色</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon feature-icon-orange">🎨</div>
-                    <h3 class="feature-title">50+ 情感风格控制</h3>
-                    <p class="feature-desc">温柔/愤怒/悲伤/撒娇等行内标签，支持方言、唱歌模式</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon feature-icon-blue">⚡</div>
-                    <h3 class="feature-title">异步并发生成</h3>
-                    <p class="feature-desc">多线程 TTS，速度提升 3-5x，支持断点续传</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon feature-icon-pink">📝</div>
-                    <h3 class="feature-title">字幕完美对齐</h3>
-                    <p class="feature-desc">自动检测 SRT/ASS 编码，按时间轴精确生成</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon feature-icon-purple">🎵</div>
-                    <h3 class="feature-title">章节智能拆分</h3>
-                    <p class="feature-desc">自动识别「第X章/回/节」，按章合并输出</p>
-                </div>
+            <p class="section-sub">LLM 驱动的智能角色识别，让每本小说都有声音</p>
+        </div>
+        <div class="features-grid stagger">
+            <div class="feat fade-up">
+                <div class="feat-icon feat-icon--gold">🎭</div>
+                <h3>多角色自动识别</h3>
+                <p>LLM 分析角色性别、年龄、性格，自动匹配最佳音色</p>
+            </div>
+            <div class="feat fade-up">
+                <div class="feat-icon feat-icon--green">🎤</div>
+                <h3>500+ 高质量音色</h3>
+                <p>Edge TTS 覆盖 100+ 语言/地区，MiMo TTS 提供小米音色</p>
+            </div>
+            <div class="feat fade-up">
+                <div class="feat-icon feat-icon--warm">🎨</div>
+                <h3>50+ 情感风格控制</h3>
+                <p>温柔/愤怒/悲伤/撒娇等行内标签，支持方言、唱歌模式</p>
+            </div>
+            <div class="feat fade-up">
+                <div class="feat-icon feat-icon--gold">⚡</div>
+                <h3>异步并发生成</h3>
+                <p>多线程 TTS，速度提升 3-5x，支持断点续传</p>
+            </div>
+            <div class="feat fade-up">
+                <div class="feat-icon feat-icon--green">📝</div>
+                <h3>字幕完美对齐</h3>
+                <p>自动检测 SRT/ASS 编码，按时间轴精确生成</p>
+            </div>
+            <div class="feat fade-up">
+                <div class="feat-icon feat-icon--warm">🎵</div>
+                <h3>章节智能拆分</h3>
+                <p>自动识别「第X章/回/节」，按章合并输出</p>
             </div>
         </div>
-    </section>
+    </div>
+</section>
 
-    <!-- Quick Start Section -->
-    <section class="quickstart" id="quickstart">
-        <div class="container">
+<!-- ── Quick Start ── -->
+<section id="quickstart" class="section section--alt">
+    <div class="container">
+        <div class="section-head fade-up">
+            <span class="section-tag">Quick Start</span>
             <h2 class="section-title">快速开始</h2>
-            <div class="steps-container">
-                <div class="step-card">
-                    <div class="step-number">1</div>
-                    <h3 class="step-title">安装依赖</h3>
-                    <p class="step-desc">安装 FFmpeg 和 Python 依赖</p>
-                    <div class="code-block">
-                        <pre><code><span class="comment"># 安装 FFmpeg</span>
-<span class="command">apt install ffmpeg</span>  <span class="comment"># Ubuntu/Debian</span>
-<span class="command">brew install ffmpeg</span> <span class="comment"># macOS</span>
-
-<span class="comment"># 安装 Python 依赖</span>
-pip install requests charset_normalizer</code></pre>
-                    </div>
-                </div>
-                <div class="step-card">
-                    <div class="step-number">2</div>
-                    <h3 class="step-title">生成有声书</h3>
-                    <p class="step-desc">自动模式：LLM 识别角色 → 分配音色 → 生成</p>
-                    <div class="code-block">
-                        <pre><code><span class="command">python3 scripts/generate_audiobook.py --auto novel.txt ./output</span></code></pre>
-                    </div>
-                </div>
-                <div class="step-card">
-                    <div class="step-number">3</div>
-                    <h3 class="step-title">查看结果</h3>
-                    <p class="step-desc">生成文件位于 output 目录</p>
-                    <div class="code-block">
-                        <pre><code>output/
-├── output_complete.mp3
-├── chapters/
-│   ├── 001_第一章.mp3
-│   └── 002_第二章.mp3</code></pre>
-                    </div>
-                </div>
+            <p class="section-sub">3 步完成安装和使用</p>
+        </div>
+        <div class="install-grid stagger">
+            <div class="install install--rec fade-up">
+                <div class="install-num">1</div>
+                <h3>ClawHub 一键安装（推荐）</h3>
+                <p class="desc">skills-compatible runtime</p>
+                <div class="code-box"><code>openclaw skills install @jangviktor-web/novel2voice</code></div>
+            </div>
+            <div class="install fade-up">
+                <div class="install-num">2</div>
+                <h3>直接克隆</h3>
+                <div class="code-box"><code>git clone https://github.com/jangviktor-web/novel2voice.git
+cd novel2voice
+pip install requests charset_normalizer</code></div>
+            </div>
+            <div class="install fade-up">
+                <div class="install-num">3</div>
+                <h3>一键安装脚本</h3>
+                <div class="code-box"><code>curl -fsSL https://raw.githubusercontent.com/jangviktor-web/novel2voice/main/install.sh | bash</code></div>
             </div>
         </div>
-    </section>
+        <div class="deps-check fade-up">
+            <h4>依赖检查</h4>
+            <p><code>python3 --version</code> ≥ 3.8 &nbsp;&nbsp;·&nbsp;&nbsp; <code>ffmpeg -version</code> 已安装</p>
+        </div>
+    </div>
+</section>
 
-    <!-- Voice Library Preview -->
-    <section class="voices">
-        <div class="container">
+<!-- ── Voices ── -->
+<section id="voices" class="section">
+    <div class="container">
+        <div class="section-head fade-up">
+            <span class="section-tag">Voice Library</span>
             <h2 class="section-title">音色库预览</h2>
-            <p style="text-align: center; color: var(--gray);">包含 28 个中文音色 + 9 个 MiMo 音色</p>
-            <div class="voices-grid">
-                <div class="voice-card">
-                    <div class="voice-name">晓晓</div>
-                    <div class="voice-line">清亮标准播音</div>
-                    <div class="voice-gender voice-gender-female">女声</div>
-                </div>
-                <div class="voice-card">
-                    <div class="voice-name">云扬</div>
-                    <div class="voice-line">央视浑厚播音</div>
-                    <div class="voice-gender voice-gender-male">男声</div>
-                </div>
-                <div class="voice-card">
-                    <div class="voice-name">晓依</div>
-                    <div class="voice-line">低沉温柔治愈</div>
-                    <div class="voice-gender voice-gender-female">女声</div>
-                </div>
-                <div class="voice-card">
-                    <div class="voice-name">云希</div>
-                    <div class="voice-line">清爽阳光少年</div>
-                    <div class="voice-gender voice-gender-male">男声</div>
-                </div>
-                <div class="voice-card">
-                    <div class="voice-name">晓涵</div>
-                    <div class="voice-line">文艺清冷</div>
-                    <div class="voice-gender voice-gender-female">女声</div>
-                </div>
-                <div class="voice-card">
-                    <div class="voice-name">晓墨</div>
-                    <div class="voice-line">情绪丰富</div>
-                    <div class="voice-gender voice-gender-female">女声</div>
-                </div>
-                <div class="voice-card">
-                    <div class="voice-name">晓睿</div>
-                    <div class="voice-line">稳重厚实中年</div>
-                    <div class="voice-gender voice-gender-female">女声</div>
-                </div>
-                <div class="voice-card">
-                    <div class="voice-name">云健</div>
-                    <div class="voice-line">低沉浑厚大叔</div>
-                    <div class="voice-gender voice-gender-male">男声</div>
-                </div>
-                <div class="voice-card">
-                    <div class="voice-name">冰糖</div>
-                    <div class="voice-line">清甜治愈</div>
-                    <div class="voice-gender voice-gender-female">MiMo</div>
-                </div>
-                <div class="voice-card">
-                    <div class="voice-name">茉莉</div>
-                    <div class="voice-line">软糯温柔</div>
-                    <div class="voice-gender voice-gender-female">MiMo</div>
-                </div>
-                <div class="voice-card">
-                    <div class="voice-name">苏打</div>
-                    <div class="voice-line">清亮少年</div>
-                    <div class="voice-gender voice-gender-male">MiMo</div>
-                </div>
-                <div class="voice-card">
-                    <div class="voice-name">白桦</div>
-                    <div class="voice-line">苍老沉稳</div>
-                    <div class="voice-gender voice-gender-male">MiMo</div>
-                </div>
-            </div>
-            <p style="text-align: center; margin-top: 1.5rem; color: var(--primary);">
-                <a href="https://github.com/jangviktor-web/novel2voice/blob/main/README.md#voice-library" style="text-decoration: underline;">
-                    查看完整音色库 →
-                </a>
-            </p>
+            <p class="section-sub">包含 28 个中文音色 + 9 个 MiMo 音色</p>
         </div>
-    </section>
+        <div class="voice-grid stagger">
+            <div class="voice fade-up">
+                <div class="voice-name">晓晓</div>
+                <div class="voice-line">清亮标准播音</div>
+                <div class="voice-tag voice-tag--f">女声</div>
+            </div>
+            <div class="voice fade-up">
+                <div class="voice-name">云扬</div>
+                <div class="voice-line">央视浑厚播音</div>
+                <div class="voice-tag voice-tag--m">男声</div>
+            </div>
+            <div class="voice fade-up">
+                <div class="voice-name">晓依</div>
+                <div class="voice-line">低沉温柔治愈</div>
+                <div class="voice-tag voice-tag--f">女声</div>
+            </div>
+            <div class="voice fade-up">
+                <div class="voice-name">云希</div>
+                <div class="voice-line">清爽阳光少年</div>
+                <div class="voice-tag voice-tag--m">男声</div>
+            </div>
+            <div class="voice fade-up">
+                <div class="voice-name">晓涵</div>
+                <div class="voice-line">文艺清冷</div>
+                <div class="voice-tag voice-tag--f">女声</div>
+            </div>
+            <div class="voice fade-up">
+                <div class="voice-name">晓墨</div>
+                <div class="voice-line">情绪丰富</div>
+                <div class="voice-tag voice-tag--f">女声</div>
+            </div>
+            <div class="voice fade-up">
+                <div class="voice-name">晓睿</div>
+                <div class="voice-line">稳重厚实中年</div>
+                <div class="voice-tag voice-tag--f">女声</div>
+            </div>
+            <div class="voice fade-up">
+                <div class="voice-name">云健</div>
+                <div class="voice-line">低沉浑厚大叔</div>
+                <div class="voice-tag voice-tag--m">男声</div>
+            </div>
+            <div class="voice fade-up">
+                <div class="voice-name">冰糖</div>
+                <div class="voice-line">清甜治愈</div>
+                <div class="voice-tag voice-tag--mimo">MiMo</div>
+            </div>
+            <div class="voice fade-up">
+                <div class="voice-name">茉莉</div>
+                <div class="voice-line">软糯温柔</div>
+                <div class="voice-tag voice-tag--mimo">MiMo</div>
+            </div>
+            <div class="voice fade-up">
+                <div class="voice-name">苏打</div>
+                <div class="voice-line">清亮少年</div>
+                <div class="voice-tag voice-tag--mimo">MiMo</div>
+            </div>
+            <div class="voice fade-up">
+                <div class="voice-name">白桦</div>
+                <div class="voice-line">苍老沉稳</div>
+                <div class="voice-tag voice-tag--mimo">MiMo</div>
+            </div>
+        </div>
+        <div style="text-align: center; margin-top: 1.5rem;" class="fade-up">
+            <a href="https://github.com/jangviktor-web/novel2voice/blob/main/README.md#voice-library" style="color: var(--accent-gold); text-decoration: none; font-family: var(--font-display); font-weight: 600; font-size: 0.9rem;">
+                查看完整音色库 →
+            </a>
+        </div>
+    </div>
+</section>
 
-    <!-- Comparison Section -->
-    <section class="comparison">
-        <div class="container">
+<!-- ── Comparison ── -->
+<section id="compare" class="section section--alt">
+    <div class="container">
+        <div class="section-head fade-up">
+            <span class="section-tag">Comparison</span>
             <h2 class="section-title">产品对比</h2>
-            <table class="comparison-table">
+            <p class="section-sub">为什么选择 Novel2Voice</p>
+        </div>
+        <div style="overflow-x: auto;" class="fade-up">
+            <table class="cmp-table">
                 <thead>
                     <tr>
                         <th>特性</th>
@@ -735,144 +832,136 @@ pip install requests charset_normalizer</code></pre>
                 <tbody>
                     <tr>
                         <td>多角色自动分配</td>
-                        <td><span class="check">✅ LLM 识别</span></td>
-                        <td><span class="check">✅</span></td>
-                        <td><span class="cross">❌</span></td>
-                        <td><span class="cross">❌</span></td>
+                        <td><span class="yes">✅ LLM 识别</span></td>
+                        <td><span class="yes">✅</span></td>
+                        <td><span class="no">❌</span></td>
+                        <td><span class="no">❌</span></td>
                     </tr>
                     <tr>
                         <td>情感/风格控制</td>
-                        <td><span class="check">✅ 50+ 标签</span></td>
-                        <td><span class="check">✅</span></td>
-                        <td><span class="check">⚠️</span></td>
-                        <td><span class="cross">❌</span></td>
+                        <td><span class="yes">✅ 50+ 标签</span></td>
+                        <td><span class="yes">✅</span></td>
+                        <td><span class="yes">⚠️</span></td>
+                        <td><span class="no">❌</span></td>
                     </tr>
                     <tr>
                         <td>字幕转语音</td>
-                        <td><span class="check">✅ SRT/ASS</span></td>
-                        <td><span class="cross">❌</span></td>
-                        <td><span class="cross">❌</span></td>
-                        <td><span class="cross">❌</span></td>
+                        <td><span class="yes">✅ SRT/ASS</span></td>
+                        <td><span class="no">❌</span></td>
+                        <td><span class="no">❌</span></td>
+                        <td><span class="no">❌</span></td>
                     </tr>
                     <tr>
                         <td>并发生成</td>
-                        <td><span class="check">✅ 3-5x 加速</span></td>
-                        <td><span class="check">✅</span></td>
-                        <td><span class="cross">❌</span></td>
-                        <td><span class="cross">❌</span></td>
+                        <td><span class="yes">✅ 3-5x 加速</span></td>
+                        <td><span class="yes">✅</span></td>
+                        <td><span class="no">❌</span></td>
+                        <td><span class="no">❌</span></td>
                     </tr>
                     <tr>
                         <td>音色数量</td>
-                        <td><span class="check">✅ 500+</span></td>
-                        <td><span class="check">✅</span></td>
-                        <td><span class="check">⚠️</span></td>
-                        <td><span class="check">⚠️</span></td>
+                        <td><span class="yes">✅ 500+</span></td>
+                        <td><span class="yes">✅</span></td>
+                        <td><span class="yes">⚠️</span></td>
+                        <td><span class="yes">⚠️</span></td>
                     </tr>
                     <tr>
                         <td>中文方言</td>
-                        <td><span class="check">✅ 9 种</span></td>
-                        <td><span class="cross">❌</span></td>
-                        <td><span class="cross">❌</span></td>
-                        <td><span class="cross">❌</span></td>
+                        <td><span class="yes">✅ 9 种</span></td>
+                        <td><span class="no">❌</span></td>
+                        <td><span class="no">❌</span></td>
+                        <td><span class="no">❌</span></td>
                     </tr>
                     <tr>
                         <td>断点续传</td>
-                        <td><span class="check">✅</span></td>
-                        <td><span class="check">✅</span></td>
-                        <td><span class="cross">❌</span></td>
-                        <td><span class="cross">❌</span></td>
+                        <td><span class="yes">✅</span></td>
+                        <td><span class="yes">✅</span></td>
+                        <td><span class="no">❌</span></td>
+                        <td><span class="no">❌</span></td>
                     </tr>
                     <tr>
                         <td>完全免费</td>
-                        <td><span class="check">✅</span></td>
-                        <td><span class="check">✅</span></td>
-                        <td><span class="check">⚠️</span></td>
-                        <td><span class="cross">❌</span></td>
+                        <td><span class="yes">✅</span></td>
+                        <td><span class="yes">✅</span></td>
+                        <td><span class="yes">⚠️</span></td>
+                        <td><span class="no">❌</span></td>
                     </tr>
                 </tbody>
             </table>
         </div>
-    </section>
+    </div>
+</section>
 
-    <!-- Documentation Section -->
-    <section class="docs">
-        <div class="container">
+<!-- ── Docs ── -->
+<section id="docs" class="section">
+    <div class="container">
+        <div class="section-head fade-up">
+            <span class="section-tag">Documentation</span>
             <h2 class="section-title">文档资源</h2>
-            <div class="docs-grid">
-                <a href="https://github.com/jangviktor-web/novel2voice/blob/main/README.md" class="doc-card">
-                    <div class="doc-icon">📖</div>
-                    <h3 class="doc-title">完整文档</h3>
-                    <p class="doc-desc">快速开始、功能介绍、使用示例</p>
-                </a>
-                <a href="https://github.com/jangviktor-web/novel2voice/blob/main/README.md#voice-library" class="doc-card">
-                    <div class="doc-icon">🎤</div>
-                    <h3 class="doc-title">音色库</h3>
-                    <p class="doc-desc">28 个中文音色 + 9 个 MiMo 音色</p>
-                </a>
-                <a href="https://github.com/jangviktor-web/novel2voice/blob/main/README.md#features" class="doc-card">
-                    <div class="doc-icon">✨</div>
-                    <h3 class="doc-title">功能详解</h3>
-                    <p class="doc-desc">多角色识别、情感风格、字幕转换</p>
-                </a>
-                <a href="https://github.com/jangviktor-web/novel2voice/blob/main/README.md#usage" class="doc-card">
-                    <div class="doc-icon">💡</div>
-                    <h3 class="doc-title">使用指南</h3>
-                    <p class="doc-desc">基础用法、高级选项、故障排除</p>
-                </a>
-            </div>
+            <p class="section-sub">深入了解 Novel2Voice</p>
         </div>
-    </section>
-
-    <!-- Footer -->
-    <footer class="footer">
-        <div class="container">
-            <p class="footer-text">
-                Built with ❤️ for novel lovers · Powered by
-                <a href="https://learn.microsoft.com/en-us/azure/ai-services/speech-service/" target="_blank">Edge TTS</a>
-                & <a href="https://mimo.xiaomi.com" target="_blank">MiMo TTS</a>
-            </p>
-            <p class="footer-text" style="margin-top: 0.5rem;">
-                <a href="https://github.com/jangviktor-web/novel2voice" target="_blank">GitHub</a>
-                ·
-                <a href="https://github.com/jangviktor-web/novel2voice/issues" target="_blank">Issues</a>
-                ·
-                <a href="https://github.com/jangviktor-web/novel2voice/discussions" target="_blank">Discussions</a>
-            </p>
+        <div class="docs-grid stagger">
+            <a href="https://github.com/jangviktor-web/novel2voice/blob/main/README.md" class="doc-card fade-up">
+                <div class="ic">📖</div>
+                <h3>完整文档</h3>
+                <p>快速开始、功能介绍、使用示例</p>
+            </a>
+            <a href="https://github.com/jangviktor-web/novel2voice/blob/main/README.md#voice-library" class="doc-card fade-up">
+                <div class="ic">🎤</div>
+                <h3>音色库</h3>
+                <p>28 个中文音色 + 9 个 MiMo 音色</p>
+            </a>
+            <a href="https://github.com/jangviktor-web/novel2voice/blob/main/README.md#features" class="doc-card fade-up">
+                <div class="ic">✨</div>
+                <h3>功能详解</h3>
+                <p>多角色识别、情感风格、字幕转换</p>
+            </a>
+            <a href="https://github.com/jangviktor-web/novel2voice/blob/main/README.md#usage" class="doc-card fade-up">
+                <div class="ic">💡</div>
+                <h3>使用指南</h3>
+                <p>基础用法、高级选项、故障排除</p>
+            </a>
         </div>
-    </footer>
+    </div>
+</section>
 
-    <script>
-        // Smooth scroll for anchor links
-        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-            anchor.addEventListener('click', function (e) {
-                e.preventDefault();
-                document.querySelector(this.getAttribute('href')).scrollIntoView({
-                    behavior: 'smooth'
-                });
-            });
+<!-- ── Footer ── -->
+<footer>
+    <div class="container">
+        <div class="flinks">
+            <a href="https://github.com/jangviktor-web/novel2voice">GitHub</a>
+            <a href="https://github.com/jangviktor-web/novel2voice/issues">Issues</a>
+            <a href="https://github.com/jangviktor-web/novel2voice/discussions">Discussions</a>
+        </div>
+        <p>
+            Built with ❤️ for novel lovers · Powered by
+            <a href="https://learn.microsoft.com/en-us/azure/ai-services/speech-service/">Edge TTS</a>
+            & <a href="https://mimo.xiaomi.com">MiMo TTS</a>
+        </p>
+    </div>
+</footer>
+
+<script>
+    // ── Intersection Observer for fade-up ──
+    const obs = new IntersectionObserver((entries) => {
+        entries.forEach(e => {
+            if (e.isIntersecting) {
+                e.target.classList.add('in');
+                obs.unobserve(e.target);
+            }
         });
+    }, { threshold: 0.08, rootMargin: '0px 0px -40px 0px' });
 
-        // Add animation on scroll
-        const observerOptions = {
-            threshold: 0.1,
-            rootMargin: '0px 0px -50px 0px'
-        };
+    document.querySelectorAll('.fade-up').forEach(el => obs.observe(el));
 
-        const observer = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    entry.target.style.opacity = '1';
-                    entry.target.style.transform = 'translateY(0)';
-                }
-            });
-        }, observerOptions);
-
-        document.querySelectorAll('.feature-card, .step-card, .voice-card, .doc-card').forEach(el => {
-            el.style.opacity = '0';
-            el.style.transform = 'translateY(20px)';
-            el.style.transition = 'all 0.6s ease';
-            observer.observe(el);
+    // ── Smooth scroll ──
+    document.querySelectorAll('a[href^="#"]').forEach(a => {
+        a.addEventListener('click', e => {
+            e.preventDefault();
+            const t = document.querySelector(a.getAttribute('href'));
+            if (t) t.scrollIntoView({ behavior: 'smooth', block: 'start' });
         });
-    </script>
+    });
+</script>
 </body>
 </html>
