@@ -2,6 +2,7 @@
 <div align="center">
 
 <img width="200"  alt="1000014334" src="https://github.com/user-attachments/assets/d2e86b97-16f9-4904-a3a4-2c754bb00bef" />
+
 # Novel2Voice
 
 **小说 / 视频字幕 → 多角色有声书，一步到位。**
