@@ -289,7 +289,7 @@ python3 scripts/generate_audiobook.py --auto novel.txt ./output --preview-only
 | Milo | 英文 | 清亮阳光 | 少年男主 |
 | Dean | 英文 | 低沉磁性 | 成熟男主 |
 
-> 🎧 **试听全部音色**：用浏览器打开 [`scripts/voice_samples/index.html`](scripts/voice_samples/index.html)，支持搜索、分类筛选、一键复制音色名称。
+> 🎧 **试听全部音色**：用浏览器打开 [`scripts/voice_samples/index.html`](https://jangviktor-web.github.io/novel2voice/scripts/voice_samples/index.html)，支持搜索、分类筛选、一键复制音色名称。
 
 ---
 
