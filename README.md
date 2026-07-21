@@ -17,9 +17,53 @@
 
 <br/>
 
-<a href="#-quick-start">Quick Start</a> · <a href="#-features">Features</a> · <a href="#-voice-library">Voices</a> · <a href="#-usage">Usage</a> · <a href="#-workflow">Workflow</a> · <a href="#-comparison">Comparison</a> · <a href="references/">Docs</a>
+<a href="#-Installation">安装</a> <a href="#-quick-start">快速开始</a> · <a href="#-features">Features</a> · <a href="#-voice-library">音色</a> · <a href="#-usage">Usage</a> · <a href="#-workflow"工作流</a> · <a href="#-comparison">Comparison</a> · <a href="references/">Docs</a>
 
 </div>
+
+---
+
+## 📦 Installation
+
+### 方式一：ClawHub 一键安装（推荐）
+
+```bash
+openclaw skills install @jangviktor-web/novel2voice
+```
+
+### 方式二：直接克隆
+
+```bash
+git clone https://github.com/jangviktor-web/novel2voice.git
+cd novel2voice
+pip install requests charset_normalizer
+```
+
+### 方式三：一键安装脚本
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/jangviktor-web/novel2voice/main/install.sh | bash
+```
+
+### 方式四：手动放入 Skills 目录
+
+```bash
+# QoderWork / OpenClaw / Claude Code 等 skills-compatible runtime
+cp -r novel2voice ~/.qoderworkcn/skills/novel2voice
+```
+
+### 环境要求
+
+| 依赖 | 版本 | 用途 | 必须 |
+|---|---|---|---|
+| Python | ≥ 3.8 | 主脚本运行 | ✅ |
+| FFmpeg | 任意 | MP3 编码 + 响度标准化 | ✅ |
+| requests | 最新 | HTTP 请求 TTS API | ✅ |
+| charset_normalizer | 最新 | 字幕文件编码检测 | 推荐 |
+| 网络连接 | — | 调用 Edge TTS / MiMo API | ✅ |
+
+> [!NOTE]
+> Edge TTS 为默认后端，无需 API Key，开箱即用。MiMo TTS 需要额外设置 `MIMO_API_KEY`。
 
 ---
 
@@ -284,50 +328,6 @@ graph LR
 | 断点续传 | ✅ | ✅ | ❌ | ❌ |
 | 免费 | ✅ 完全免费 | ✅ | ⚠️ 部分收费 | ❌ 通常收费 |
 | 无需 GPU | ✅ | ✅ | ⚠️ 部分需要 | ✅ |
-
----
-
-## 📦 Installation
-
-### 方式一：ClawHub 一键安装（推荐）
-
-```bash
-openclaw skills install @jangviktor-web/novel2voice
-```
-
-### 方式二：直接克隆
-
-```bash
-git clone https://github.com/jangviktor-web/novel2voice.git
-cd novel2voice
-pip install requests charset_normalizer
-```
-
-### 方式三：一键安装脚本
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/jangviktor-web/novel2voice/main/install.sh | bash
-```
-
-### 方式四：手动放入 Skills 目录
-
-```bash
-# QoderWork / OpenClaw / Claude Code 等 skills-compatible runtime
-cp -r novel2voice ~/.qoderworkcn/skills/novel2voice
-```
-
-### 环境要求
-
-| 依赖 | 版本 | 用途 | 必须 |
-|---|---|---|---|
-| Python | ≥ 3.8 | 主脚本运行 | ✅ |
-| FFmpeg | 任意 | MP3 编码 + 响度标准化 | ✅ |
-| requests | 最新 | HTTP 请求 TTS API | ✅ |
-| charset_normalizer | 最新 | 字幕文件编码检测 | 推荐 |
-| 网络连接 | — | 调用 Edge TTS / MiMo API | ✅ |
-
-> [!NOTE]
-> Edge TTS 为默认后端，无需 API Key，开箱即用。MiMo TTS 需要额外设置 `MIMO_API_KEY`。
 
 ---
 
