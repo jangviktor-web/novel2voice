@@ -17,7 +17,7 @@
 
 <br/>
 
-<a href="#-Installation">安装</a> <a href="#-quick-start">快速开始</a> · <a href="#-features">Features</a> · <a href="#-voice-library">音色</a> · <a href="#-usage">Usage</a> · <a href="#-workflow"工作流</a> · <a href="#-comparison">Comparison</a> · <a href="references/">Docs</a>
+<a href="#-Installation">安装</a> <a href="#-quick-start">快速开始</a> · <a href="#-features">Features</a> · <a href="#-voice-library">音色</a> · <a href="#-usage">Usage</a> · <a href="#-workflow">工作流</a> · <a href="#-comparison">Comparison</a> · <a href="references/">Docs</a>
 
 </div>
 
