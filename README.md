@@ -387,7 +387,11 @@ novel2voice/
 | [Long Body](references/generated-long-body.md) | 长文本处理扩展说明 |
 
 ---
+## ⭐️ Star
 
+[![RepoStars](https://repostars.dev/api/embed?repo=jangviktor-web%2Fnovel2voice&theme=grape)](https://repostars.dev/?repos=jangviktor-web%2Fnovel2voice&theme=grape)
+
+---
 ## 📄 License
 
 [MIT](LICENSE)
