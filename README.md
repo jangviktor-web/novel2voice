@@ -1,7 +1,8 @@
 
 <div align="center">
+  
+<img width="200" alt="1000194859" src="https://github.com/user-attachments/assets/d1ff2b9f-bfa4-4774-8d8e-27144985fafe" />
 
-<img width="200"  alt="1000014334" src="https://github.com/user-attachments/assets/d2e86b97-16f9-4904-a3a4-2c754bb00bef" />
 
 # Novel2Voice
 
